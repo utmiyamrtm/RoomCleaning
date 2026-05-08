@@ -791,6 +791,16 @@
     }
 
     /* Weight rows */
+    .recalc-btn {
+      flex-shrink: 0;
+      background: none; border: 1px solid var(--bd);
+      color: var(--ink2); font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      padding: 3px 9px; border-radius: 6px;
+      cursor: pointer; margin-right: auto;
+    }
+    .recalc-btn:active { background: var(--bd); }
+
     .weight-total-row {
       display: flex; align-items: center; gap: 8px;
       justify-content: flex-end;
@@ -1280,6 +1290,7 @@
     <div class="settings-sec">
       <div class="sec-lbl">部屋の重み（全体完了度への影響）</div>
       <div class="weight-total-row">
+        <button class="recalc-btn" onclick="recalcWeights()">マス目から再計算</button>
         <span class="weight-total-lbl">合計</span>
         <span class="weight-total-val" id="weightTotal">100</span>
       </div>
@@ -1316,6 +1327,33 @@ const ROOM_COLORS = [
 const COLORS   = ['','#c42020','#d05c14','#b08c08','#1478b4','#1438a8'];
 const COLORS_A = ['','rgba(196,32,32,.65)','rgba(208,92,20,.65)','rgba(176,140,8,.65)','rgba(20,120,180,.65)','rgba(20,56,168,.65)'];
 
+// Distribute 100 points proportionally to cell count (largest remainder method)
+function calcWeightsFromGrid(cells, roomList) {
+  const counts = {};
+  roomList.forEach(r => { counts[r.id] = 0; });
+  for (let row = 0; row < GRID_ROWS; row++)
+    for (let col = 0; col < GRID_COLS; col++) {
+      const rid = cells[row]?.[col];
+      if (rid && counts[rid] !== undefined) counts[rid]++;
+    }
+  const total = Object.values(counts).reduce((a,b) => a+b, 0);
+  if (total === 0) { roomList.forEach(r => r.weight = Math.round(100/roomList.length)); return; }
+
+  // Largest remainder method
+  const quotients = roomList.map(r => ({
+    id: r.id,
+    q: total > 0 ? (counts[r.id] / total * 100) : 0,
+    floor: 0, rem: 0
+  }));
+  quotients.forEach(x => { x.floor = Math.floor(x.q); x.rem = x.q - x.floor; });
+  let remainder = 100 - quotients.reduce((s, x) => s + x.floor, 0);
+  quotients.sort((a,b) => b.rem - a.rem);
+  quotients.forEach((x, i) => { x.floor += i < remainder ? 1 : 0; });
+  const result = {};
+  quotients.forEach(x => { result[x.id] = x.floor; });
+  roomList.forEach(r => { r.weight = result[r.id] ?? 0; });
+}
+
 function makeDefaultGridData() {
   const cells = Array.from({length: GRID_ROWS}, () => Array(GRID_COLS).fill(null));
   const paint = (id, rs, re, cs, ce) => {
@@ -1328,18 +1366,17 @@ function makeDefaultGridData() {
   paint('kitchen',  5, 7, 0, 4);
   paint('bath',     5, 7, 5, 7);
   paint('entrance', 8, 9, 0, 7);
-  return {
-    cells,
-    rooms: [
-      { id:'main',     weight:50, colorIdx:0 },
-      { id:'closet',   weight: 5, colorIdx:1 },
-      { id:'toilet',   weight: 5, colorIdx:2 },
-      { id:'washroom', weight: 8, colorIdx:3 },
-      { id:'kitchen',  weight:12, colorIdx:4 },
-      { id:'bath',     weight:12, colorIdx:5 },
-      { id:'entrance', weight: 8, colorIdx:6 },
-    ]
-  };
+  const rooms = [
+    { id:'main',     colorIdx:0 },
+    { id:'closet',   colorIdx:1 },
+    { id:'toilet',   colorIdx:2 },
+    { id:'washroom', colorIdx:3 },
+    { id:'kitchen',  colorIdx:4 },
+    { id:'bath',     colorIdx:5 },
+    { id:'entrance', colorIdx:6 },
+  ].map(r => ({...r, weight:0}));
+  calcWeightsFromGrid(cells, rooms);
+  return { cells, rooms };
 }
 
 // Default room names (for initial creation only)
@@ -2249,6 +2286,12 @@ function closeSettings() {
   renderOverall();
 }
 
+function recalcWeights() {
+  calcWeightsFromGrid(gridData.cells, gridData.rooms);
+  saveGridData();
+  renderWeightList();
+}
+
 // --- Weights ---
 function renderWeightList() {
   const total = gridData.rooms.reduce((s, gr) => s + gr.weight, 0);
@@ -2555,9 +2598,10 @@ function doAddRoom() {
   if (!name) { document.getElementById('addRoomModal').classList.remove('on'); return; }
   const id = `room_${Date.now()}`;
   const colorIdx = nextColorIdx();
-  gridData.rooms.push({ id, weight: 5, colorIdx });
+  gridData.rooms.push({ id, weight: 0, colorIdx });
   rooms.push({ id, name, notes:'', tasks:[], subplaces:[], checks:{floor:false,trash:false} });
   if (!defaultTasks[id]) defaultTasks[id] = [];
+  calcWeightsFromGrid(gridData.cells, gridData.rooms);
   geSelectedRoom = id;
   saveGridData();
   save();
@@ -2578,6 +2622,7 @@ function geDeleteRoom() {
   gridData.rooms = gridData.rooms.filter(gr => gr.id !== geSelectedRoom);
   rooms = rooms.filter(r => r.id !== geSelectedRoom);
   geSelectedRoom = gridData.rooms[0]?.id || null;
+  calcWeightsFromGrid(gridData.cells, gridData.rooms);
   saveGridData(); save();
   renderGeRooms();
   renderGeGrid();
