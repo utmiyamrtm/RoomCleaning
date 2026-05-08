@@ -2108,6 +2108,15 @@ document.getElementById('taskInp').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); addTask(); }
 });
 
+// iOS: scroll input into view after keyboard appears
+document.getElementById('sheet').addEventListener('focusin', e => {
+  const el = e.target;
+  if (!['INPUT','TEXTAREA'].includes(el.tagName)) return;
+  setTimeout(() => {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 350);
+});
+
 document.getElementById('subCancelBtn').addEventListener('click', closeSubModal);
 document.getElementById('subOkBtn').addEventListener('click', doSubModal);
 document.getElementById('subInp').addEventListener('keydown', e => {
