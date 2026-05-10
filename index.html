@@ -1,43 +1,57 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>おへや管理</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
   <style>
     /* iOS auto-zoom prevention: font-size must be >= 16px on all inputs */
-    input, textarea, select {
+    input,
+    textarea,
+    select {
       font-size: 16px !important;
     }
 
-    *, *::before, *::after {
-      box-sizing: border-box; margin: 0; padding: 0;
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
       -webkit-tap-highlight-color: transparent;
     }
 
     :root {
-      --bg:   #f0ede4;
-      --paper:#faf8f2;
-      --ink:  #1c1a14;
+      --bg: #f0ede4;
+      --paper: #faf8f2;
+      --ink: #1c1a14;
       --ink2: #7a7263;
-      --bd:   #d4cfc3;
+      --bd: #d4cfc3;
       --c1: #c42020;
       --c2: #d05c14;
       --c3: #b08c08;
       --c4: #1478b4;
       --c5: #1438a8;
-      --c1a: rgba(196,32,32,0.62);
-      --c2a: rgba(208,92,20,0.62);
-      --c3a: rgba(176,140,8,0.62);
-      --c4a: rgba(20,120,180,0.62);
-      --c5a: rgba(20,56,168,0.62);
+      --c1a: rgba(196, 32, 32, 0.62);
+      --c2a: rgba(208, 92, 20, 0.62);
+      --c3a: rgba(176, 140, 8, 0.62);
+      --c4a: rgba(20, 120, 180, 0.62);
+      --c5a: rgba(20, 56, 168, 0.62);
     }
 
-    html, body { height: 100%; height: 100dvh; }
+    html,
+    body {
+      height: 100%;
+      height: 100dvh;
+    }
 
     body {
       font-family: 'Noto Sans JP', sans-serif;
@@ -114,7 +128,7 @@
       height: auto;
       display: block;
       border-radius: 6px;
-      filter: drop-shadow(0 3px 12px rgba(28,26,20,0.13));
+      filter: drop-shadow(0 3px 12px rgba(28, 26, 20, 0.13));
     }
 
     /* ===== LEGEND ===== */
@@ -138,23 +152,39 @@
       height: 9px;
       width: 90px;
       border-radius: 4px;
-      background: linear-gradient(to right, var(--c1), var(--c2), var(--c3), var(--c4), var(--c5));
+      background: linear-gradient(to right,
+          rgb(140, 10, 10),
+          rgb(190, 30, 20),
+          rgb(210, 85, 15),
+          rgb(195, 145, 10),
+          rgb(160, 155, 10),
+          rgb(20, 130, 160),
+          rgb(20, 80, 175),
+          rgb(15, 45, 160));
     }
 
     /* ===== OVERLAY ===== */
     .overlay {
-      position: fixed; inset: 0;
-      background: rgba(28,26,20,0.42);
-      opacity: 0; pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 26, 20, 0.42);
+      opacity: 0;
+      pointer-events: none;
       transition: opacity 0.3s;
       z-index: 10;
     }
-    .overlay.on { opacity: 1; pointer-events: auto; }
+
+    .overlay.on {
+      opacity: 1;
+      pointer-events: auto;
+    }
 
     /* ===== BOTTOM SHEET ===== */
     .sheet {
       position: fixed;
-      bottom: 0; left: 0; right: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
       background: var(--paper);
       border-radius: 20px 20px 0 0;
       max-height: 74vh;
@@ -164,129 +194,179 @@
       display: flex;
       flex-direction: column;
     }
-    .sheet.open { transform: translateY(0); }
+
+    .sheet.open {
+      transform: translateY(0);
+    }
 
     .knob {
-      width: 36px; height: 4px;
-      background: var(--bd); border-radius: 2px;
+      width: 36px;
+      height: 4px;
+      background: var(--bd);
+      border-radius: 2px;
       margin: 10px auto 0;
       flex-shrink: 0;
     }
 
     .sh-hdr {
       padding: 10px 16px 10px;
-      display: flex; align-items: center; gap: 9px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
       border-bottom: 1px solid var(--bd);
       flex-shrink: 0;
     }
 
     .sh-dot {
-      width: 14px; height: 14px;
-      border-radius: 4px; flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      flex-shrink: 0;
       transition: background 0.3s;
     }
 
     .sh-name {
-      font-size: 17px; font-weight: 700;
+      font-size: 17px;
+      font-weight: 700;
       flex: 1;
     }
 
     /* Rename button */
     .rename-btn {
-      background: none; border: none;
-      color: var(--ink2); font-size: 12px;
+      background: none;
+      border: none;
+      color: var(--ink2);
+      font-size: 12px;
       font-family: 'DM Mono', monospace;
-      cursor: pointer; padding: 2px 6px;
+      cursor: pointer;
+      padding: 2px 6px;
       border: 1px solid var(--bd);
       border-radius: 5px;
       flex-shrink: 0;
     }
 
     .close-btn {
-      width: 26px; height: 26px;
-      border-radius: 50%; border: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: none;
       background: var(--bg);
-      color: var(--ink2); font-size: 14px;
+      color: var(--ink2);
+      font-size: 14px;
       cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
     }
 
     .sh-body {
-      flex: 1; overflow-y: auto;
+      flex: 1;
+      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding: 14px 16px;
       padding-bottom: max(20px, env(safe-area-inset-bottom));
-      display: flex; flex-direction: column; gap: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     /* ===== SECTION ===== */
     .sec-lbl {
-      font-size: 10px; font-weight: 500;
-      letter-spacing: 0.13em; text-transform: uppercase;
-      color: var(--ink2); font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--ink2);
+      font-family: 'DM Mono', monospace;
       margin-bottom: 7px;
     }
 
     /* ===== PROGRESS ===== */
-    .prog-wrap { display: flex; flex-direction: column; gap: 7px; }
+    .prog-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
 
     .prog-top {
-      display: flex; align-items: baseline; gap: 10px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
     }
 
     .prog-pct {
       font-family: 'DM Mono', monospace;
-      font-size: 34px; font-weight: 500; line-height: 1;
+      font-size: 34px;
+      font-weight: 500;
+      line-height: 1;
       transition: color 0.4s;
     }
 
     .prog-sub {
       font-family: 'DM Mono', monospace;
-      font-size: 11px; color: var(--ink2);
+      font-size: 11px;
+      color: var(--ink2);
     }
 
     .prog-bar-track {
-      height: 8px; background: var(--bd);
-      border-radius: 4px; overflow: hidden;
+      height: 8px;
+      background: var(--bd);
+      border-radius: 4px;
+      overflow: hidden;
     }
 
     .prog-bar-fill {
-      height: 100%; border-radius: 4px;
+      height: 100%;
+      border-radius: 4px;
       transition: width 0.45s ease, background-color 0.45s ease;
     }
 
     .prog-breakdown {
-      display: flex; gap: 10px;
+      display: flex;
+      gap: 10px;
     }
 
     .prog-chip {
       font-family: 'DM Mono', monospace;
-      font-size: 10px; color: var(--ink2);
+      font-size: 10px;
+      color: var(--ink2);
       background: var(--bg);
       border: 1px solid var(--bd);
-      border-radius: 5px; padding: 2px 8px;
+      border-radius: 5px;
+      padding: 2px 8px;
     }
 
     /* ===== NOTES ===== */
     textarea.notes {
-      width: 100%; min-height: 64px;
+      width: 100%;
+      min-height: 64px;
       padding: 9px 11px;
-      border: 1.5px solid var(--bd); border-radius: 10px;
+      border: 1.5px solid var(--bd);
+      border-radius: 10px;
       background: var(--bg);
       font-family: 'Noto Sans JP', sans-serif;
-      font-size: 14px; color: var(--ink);
-      resize: none; outline: none;
+      font-size: 14px;
+      color: var(--ink);
+      resize: none;
+      outline: none;
     }
-    textarea.notes:focus { border-color: #90a0b8; }
+
+    textarea.notes:focus {
+      border-color: #90a0b8;
+    }
 
     /* ===== QUICK CHECKS ===== */
     .qcheck-list {
-      display: flex; flex-direction: column; gap: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
     .qcheck-item {
-      display: flex; align-items: center; gap: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       padding: 8px 11px;
       border-radius: 8px;
       background: var(--bg);
@@ -295,28 +375,38 @@
       transition: border-color 0.15s, background 0.15s;
       user-select: none;
     }
+
     .qcheck-item.checked {
-      background: rgba(20,56,168,0.06);
-      border-color: rgba(20,56,168,0.35);
+      background: rgba(20, 56, 168, 0.06);
+      border-color: rgba(20, 56, 168, 0.35);
     }
 
     .qcheck-box {
-      width: 20px; height: 20px; flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
       border-radius: 5px;
       border: 2px solid var(--bd);
       background: white;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: white;
       transition: background 0.15s, border-color 0.15s;
     }
+
     .qcheck-item.checked .qcheck-box {
-      background: var(--c5); border-color: var(--c5);
+      background: var(--c5);
+      border-color: var(--c5);
     }
 
     .qcheck-lbl {
-      font-size: 14px; color: var(--ink);
+      font-size: 14px;
+      color: var(--ink);
       transition: color 0.15s;
     }
+
     .qcheck-item.checked .qcheck-lbl {
       color: var(--ink2);
       text-decoration: line-through;
@@ -324,97 +414,174 @@
 
     /* ===== TASKS (unified) ===== */
     .task-add {
-      display: flex; gap: 8px; margin-bottom: 8px;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
     }
 
     input.task-inp {
-      flex: 1; padding: 8px 11px;
-      border: 1.5px solid var(--bd); border-radius: 8px;
+      flex: 1;
+      padding: 8px 11px;
+      border: 1.5px solid var(--bd);
+      border-radius: 8px;
       background: var(--bg);
       font-family: 'Noto Sans JP', sans-serif;
-      font-size: 14px; color: var(--ink);
-      outline: none; min-width: 0;
+      font-size: 14px;
+      color: var(--ink);
+      outline: none;
+      min-width: 0;
     }
-    input.task-inp:focus { border-color: #90a0b8; }
+
+    input.task-inp:focus {
+      border-color: #90a0b8;
+    }
 
     .add-btn {
-      width: 38px; height: 38px; flex-shrink: 0;
-      border-radius: 8px; border: none;
-      background: var(--ink); color: white;
-      font-size: 20px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      border: none;
+      background: var(--ink);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .task-list { display: flex; flex-direction: column; gap: 5px; }
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
 
     .task-item {
-      display: flex; align-items: flex-start; gap: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
       padding: 8px 10px;
       border-radius: 8px;
       background: var(--bg);
       border: 1px solid var(--bd);
       transition: border-color 0.2s;
     }
-    .task-item[data-st="着手中"] { border-color: rgba(208,92,20,0.5); }
-    .task-item[data-st="済"]     { border-color: rgba(20,56,168,0.3); }
+
+    .task-item[data-st="着手中"] {
+      border-color: rgba(208, 92, 20, 0.5);
+    }
+
+    .task-item[data-st="済"] {
+      border-color: rgba(20, 56, 168, 0.3);
+    }
 
     /* Status pill buttons */
-    .st-row { display: flex; gap: 2px; flex-shrink: 0; padding-top: 2px; }
+    .st-row {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
 
     .st-btn {
-      width: 28px; height: 21px;
+      width: 28px;
+      height: 21px;
       border-radius: 5px;
       border: 1.5px solid var(--bd);
-      background: var(--bg); color: var(--ink2);
-      font-size: 10px; font-family: 'DM Mono', monospace;
-      cursor: pointer; transition: all 0.12s;
+      background: var(--bg);
+      color: var(--ink2);
+      font-size: 10px;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
+      transition: all 0.12s;
     }
-    /* active states */
-    .st-btn.st-未着手 { background: var(--bd); color: var(--ink); border-color: var(--ink2); }
-    .st-btn.st-着手中 { background: var(--c2); color: white; border-color: transparent; }
-    .st-btn.st-済     { background: var(--c5); color: white; border-color: transparent; }
 
-    .task-mid { flex: 1; min-width: 0; }
+    /* active states */
+    .st-btn.st-未着手 {
+      background: var(--bd);
+      color: var(--ink);
+      border-color: var(--ink2);
+    }
+
+    .st-btn.st-着手中 {
+      background: var(--c2);
+      color: white;
+      border-color: transparent;
+    }
+
+    .st-btn.st-済 {
+      background: var(--c5);
+      color: white;
+      border-color: transparent;
+    }
+
+    .task-mid {
+      flex: 1;
+      min-width: 0;
+    }
 
     .task-text {
-      font-size: 14px; line-height: 1.45;
-      word-break: break-all; display: block;
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-all;
+      display: block;
     }
-    .task-text.done { text-decoration: line-through; color: var(--ink2); }
+
+    .task-text.done {
+      text-decoration: line-through;
+      color: var(--ink2);
+    }
 
     /* Inline date row under text */
     .task-date-row {
-      display: flex; align-items: center; gap: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
       margin-top: 4px;
     }
 
     .task-date-lbl {
       font-family: 'DM Mono', monospace;
-      font-size: 10px; color: var(--ink2);
+      font-size: 10px;
+      color: var(--ink2);
       flex-shrink: 0;
     }
 
     input[type="date"].task-date-inp {
       padding: 1px 5px;
-      border: 1px solid var(--bd); border-radius: 5px;
+      border: 1px solid var(--bd);
+      border-radius: 5px;
       background: var(--paper);
       font-family: 'DM Mono', monospace;
-      font-size: 11px; color: var(--ink);
-      outline: none; -webkit-appearance: none;
+      font-size: 11px;
+      color: var(--ink);
+      outline: none;
+      -webkit-appearance: none;
       width: 118px;
     }
-    input[type="date"].task-date-inp:focus { border-color: #90a0b8; }
+
+    input[type="date"].task-date-inp:focus {
+      border-color: #90a0b8;
+    }
 
     .del-btn {
-      background: none; border: none;
-      color: var(--ink2); font-size: 16px;
-      cursor: pointer; opacity: 0.4;
-      flex-shrink: 0; padding: 0 2px; line-height: 1;
+      background: none;
+      border: none;
+      color: var(--ink2);
+      font-size: 16px;
+      cursor: pointer;
+      opacity: 0.4;
+      flex-shrink: 0;
+      padding: 0 2px;
+      line-height: 1;
     }
 
     .empty-msg {
-      font-size: 13px; color: var(--ink2);
-      text-align: center; padding: 10px 0 4px;
+      font-size: 13px;
+      color: var(--ink2);
+      text-align: center;
+      padding: 10px 0 4px;
     }
 
     /* ===== TAB STRIP ===== */
@@ -429,100 +596,159 @@
       scrollbar-width: none;
       border-bottom: 1.5px solid var(--bd);
     }
-    .tab-strip::-webkit-scrollbar { display: none; }
+
+    .tab-strip::-webkit-scrollbar {
+      display: none;
+    }
 
     .tab-btn {
       flex-shrink: 0;
       padding: 6px 13px 7px;
       border-radius: 8px 8px 0 0;
-      border: none; border-bottom: 2.5px solid transparent;
+      border: none;
+      border-bottom: 2.5px solid transparent;
       background: transparent;
       font-family: 'Noto Sans JP', sans-serif;
-      font-size: 13px; color: var(--ink2);
-      cursor: pointer; white-space: nowrap;
+      font-size: 13px;
+      color: var(--ink2);
+      cursor: pointer;
+      white-space: nowrap;
       margin-bottom: -1.5px;
       transition: color 0.15s;
     }
+
     .tab-btn.active {
-      color: var(--ink); font-weight: 600;
+      color: var(--ink);
+      font-weight: 600;
       border-bottom-color: var(--ink);
     }
 
     .tab-add-btn {
       flex-shrink: 0;
-      width: 26px; height: 26px; margin-bottom: 4px; margin-left: 4px;
+      width: 26px;
+      height: 26px;
+      margin-bottom: 4px;
+      margin-left: 4px;
       border-radius: 50%;
       border: 1.5px solid var(--bd);
-      background: var(--bg); color: var(--ink2);
-      font-size: 15px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      line-height: 1; transition: background 0.15s;
+      background: var(--bg);
+      color: var(--ink2);
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: background 0.15s;
     }
-    .tab-add-btn:active { background: var(--bd); }
+
+    .tab-add-btn:active {
+      background: var(--bd);
+    }
 
     .sub-del-bar {
       flex-shrink: 0;
       padding: 5px 16px 5px;
       border-bottom: 1px solid var(--bd);
-      display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
     }
 
     .sub-rename-btn {
-      background: none; border: 1px solid var(--bd);
-      color: var(--ink2); font-size: 11px;
+      background: none;
+      border: 1px solid var(--bd);
+      color: var(--ink2);
+      font-size: 11px;
       font-family: 'DM Mono', monospace;
-      padding: 3px 9px; border-radius: 6px; cursor: pointer;
+      padding: 3px 9px;
+      border-radius: 6px;
+      cursor: pointer;
     }
 
     .sub-del-btn {
-      background: none; border: 1px solid rgba(196,32,32,0.4);
-      color: var(--c1); font-size: 11px;
+      background: none;
+      border: 1px solid rgba(196, 32, 32, 0.4);
+      color: var(--c1);
+      font-size: 11px;
       font-family: 'DM Mono', monospace;
-      padding: 3px 9px; border-radius: 6px; cursor: pointer;
+      padding: 3px 9px;
+      border-radius: 6px;
+      cursor: pointer;
     }
 
     /* ===== RENAME MODAL ===== */
     .rename-modal {
-      position: fixed; inset: 0;
-      background: rgba(28,26,20,0.5);
-      display: none; align-items: center; justify-content: center;
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 26, 20, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
       z-index: 30;
       padding: 20px;
     }
-    .rename-modal.on { display: flex; }
+
+    .rename-modal.on {
+      display: flex;
+    }
 
     .rename-box {
       background: var(--paper);
       border-radius: 16px;
       padding: 20px;
-      width: 100%; max-width: 300px;
+      width: 100%;
+      max-width: 300px;
     }
 
-    .rename-box h3 { font-size: 15px; margin-bottom: 12px; }
+    .rename-box h3 {
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
 
     input.rename-inp {
-      width: 100%; padding: 9px 12px;
-      border: 1.5px solid var(--bd); border-radius: 8px;
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--bd);
+      border-radius: 8px;
       background: var(--bg);
       font-family: 'Noto Sans JP', sans-serif;
-      font-size: 15px; color: var(--ink);
-      outline: none; margin-bottom: 12px;
+      font-size: 15px;
+      color: var(--ink);
+      outline: none;
+      margin-bottom: 12px;
     }
-    input.rename-inp:focus { border-color: #90a0b8; }
+
+    input.rename-inp:focus {
+      border-color: #90a0b8;
+    }
 
     .rename-btns {
-      display: flex; gap: 8px; justify-content: flex-end;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
     }
 
     .rename-btns button {
-      padding: 7px 16px; border-radius: 8px;
-      border: none; font-size: 14px;
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
       font-family: 'Noto Sans JP', sans-serif;
       cursor: pointer;
     }
 
-    .rename-cancel { background: var(--bg); color: var(--ink2); }
-    .rename-ok { background: var(--ink); color: white; }
+    .rename-cancel {
+      background: var(--bg);
+      color: var(--ink2);
+    }
+
+    .rename-ok {
+      background: var(--ink);
+      color: white;
+    }
+
     /* ===== DAILY PICKUP ===== */
     .pickup-bar {
       flex-shrink: 0;
@@ -533,95 +759,145 @@
       transition: max-height 0.4s ease, padding 0.4s ease;
       padding: 10px 16px 12px;
     }
-    .pickup-bar.collapsed { max-height: 0; padding: 0 16px; }
+
+    .pickup-bar.collapsed {
+      max-height: 0;
+      padding: 0 16px;
+    }
 
     .pickup-top {
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 8px;
     }
 
     .pickup-label {
-      font-size: 11px; font-weight: 600;
+      font-size: 11px;
+      font-weight: 600;
       letter-spacing: 0.1em;
       opacity: 0.6;
       font-family: 'DM Mono', monospace;
     }
 
-    .pickup-actions { display: flex; gap: 8px; align-items: center; }
+    .pickup-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
 
     .timer-start-btn {
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.3);
-      color: white; font-size: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-size: 12px;
       font-family: 'DM Mono', monospace;
-      padding: 4px 11px; border-radius: 20px;
-      cursor: pointer; white-space: nowrap;
+      padding: 4px 11px;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
       transition: background 0.15s;
     }
-    .timer-start-btn:active { background: rgba(255,255,255,0.28); }
+
+    .timer-start-btn:active {
+      background: rgba(255, 255, 255, 0.28);
+    }
 
     .pickup-dismiss {
-      background: none; border: none;
-      color: rgba(255,255,255,0.4); font-size: 16px;
-      cursor: pointer; padding: 0 2px; line-height: 1;
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
     }
 
     .pickup-rooms {
-      display: flex; gap: 8px; flex-wrap: wrap;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .pickup-chip {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 20px;
       padding: 5px 14px;
-      font-size: 13px; font-weight: 500;
+      font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
       transition: background 0.15s;
-      display: flex; align-items: center; gap: 7px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
     }
-    .pickup-chip:active { background: rgba(255,255,255,0.25); }
+
+    .pickup-chip:active {
+      background: rgba(255, 255, 255, 0.25);
+    }
 
     .pickup-chip-pct {
       font-family: 'DM Mono', monospace;
-      font-size: 10px; opacity: 0.6;
+      font-size: 10px;
+      opacity: 0.6;
     }
 
     .pickup-empty {
-      font-size: 13px; opacity: 0.7;
+      font-size: 13px;
+      opacity: 0.7;
     }
 
     /* ===== TIMER OVERLAY ===== */
     .timer-overlay {
-      position: fixed; inset: 0;
+      position: fixed;
+      inset: 0;
       background: var(--ink);
       z-index: 50;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       gap: 0;
       transform: translateY(100%);
-      transition: transform 0.4s cubic-bezier(0.32,0.72,0,1);
+      transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
     }
-    .timer-overlay.on { transform: translateY(0); }
+
+    .timer-overlay.on {
+      transform: translateY(0);
+    }
 
     .timer-room-name {
-      color: rgba(255,255,255,0.55);
-      font-size: 14px; font-weight: 500;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 14px;
+      font-weight: 500;
       margin-bottom: 16px;
       letter-spacing: 0.05em;
     }
 
     .timer-ring-wrap {
       position: relative;
-      width: 200px; height: 200px;
+      width: 200px;
+      height: 200px;
       margin-bottom: 24px;
     }
 
-    .timer-ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .timer-ring-wrap svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
 
-    .timer-ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
+    .timer-ring-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 8;
+    }
+
     .timer-ring-fill {
-      fill: none; stroke: white; stroke-width: 8;
+      fill: none;
+      stroke: white;
+      stroke-width: 8;
       stroke-linecap: round;
       stroke-dasharray: 565.5;
       stroke-dashoffset: 0;
@@ -629,143 +905,245 @@
     }
 
     .timer-digits {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-family: 'DM Mono', monospace;
-      font-size: 52px; font-weight: 500;
-      color: white; letter-spacing: -2px;
+      font-size: 52px;
+      font-weight: 500;
+      color: white;
+      letter-spacing: -2px;
     }
 
     .timer-msg {
-      color: rgba(255,255,255,0.7);
-      font-size: 16px; text-align: center;
-      min-height: 24px; margin-bottom: 32px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 16px;
+      text-align: center;
+      min-height: 24px;
+      margin-bottom: 32px;
     }
 
-    .timer-btns { display: flex; gap: 12px; }
+    .timer-btns {
+      display: flex;
+      gap: 12px;
+    }
 
     .timer-btn {
-      padding: 12px 28px; border-radius: 30px;
-      border: none; font-size: 15px;
+      padding: 12px 28px;
+      border-radius: 30px;
+      border: none;
+      font-size: 15px;
       font-family: 'Noto Sans JP', sans-serif;
-      cursor: pointer; font-weight: 500;
+      cursor: pointer;
+      font-weight: 500;
       transition: opacity 0.15s;
     }
-    .timer-btn:active { opacity: 0.75; }
-    .timer-btn-stop { background: rgba(255,255,255,0.15); color: white; }
-    .timer-btn-done { background: white; color: var(--ink); }
+
+    .timer-btn:active {
+      opacity: 0.75;
+    }
+
+    .timer-btn-stop {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .timer-btn-done {
+      background: white;
+      color: var(--ink);
+    }
 
     /* Done celebration */
     @keyframes celebrate {
-      0%   { transform: scale(0.8); opacity: 0; }
-      60%  { transform: scale(1.1); }
-      100% { transform: scale(1);   opacity: 1; }
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
+
     .celebrate-msg {
-      font-size: 22px; font-weight: 700; color: white;
-      text-align: center; line-height: 1.5;
+      font-size: 22px;
+      font-weight: 700;
+      color: white;
+      text-align: center;
+      line-height: 1.5;
       animation: celebrate 0.5s ease forwards;
     }
 
     .alltasks-btn {
       flex-shrink: 0;
-      background: var(--ink); color: white;
-      border: none; border-radius: 20px;
-      padding: 4px 13px; font-size: 12px;
+      background: var(--ink);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 4px 13px;
+      font-size: 12px;
       font-family: 'Noto Sans JP', sans-serif;
-      cursor: pointer; margin-left: 8px;
+      cursor: pointer;
+      margin-left: 8px;
     }
 
     /* ===== ALL TASKS PANEL ===== */
     .at-filter {
       flex-shrink: 0;
-      display: flex; gap: 6px;
+      display: flex;
+      gap: 6px;
       padding: 10px 16px;
       border-bottom: 1.5px solid var(--bd);
       background: var(--paper);
     }
 
     .at-tab {
-      padding: 5px 14px; border-radius: 20px;
+      padding: 5px 14px;
+      border-radius: 20px;
       border: 1.5px solid var(--bd);
-      background: var(--bg); color: var(--ink2);
-      font-size: 12px; font-family: 'Noto Sans JP', sans-serif;
-      cursor: pointer; transition: all 0.12s;
+      background: var(--bg);
+      color: var(--ink2);
+      font-size: 12px;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+      transition: all 0.12s;
     }
-    .at-tab.active { background: var(--ink); color: white; border-color: var(--ink); }
 
-    .at-room-group { display: flex; flex-direction: column; gap: 6px; }
+    .at-tab.active {
+      background: var(--ink);
+      color: white;
+      border-color: var(--ink);
+    }
+
+    .at-room-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
 
     .at-room-hdr {
-      display: flex; align-items: center; gap: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .at-room-name {
-      font-size: 12px; font-weight: 600;
+      font-size: 12px;
+      font-weight: 600;
       font-family: 'DM Mono', monospace;
-      color: var(--ink2); letter-spacing: 0.06em;
+      color: var(--ink2);
+      letter-spacing: 0.06em;
     }
 
     .at-sub-name {
-      font-size: 10px; color: var(--ink2);
-      background: var(--bd); border-radius: 4px;
+      font-size: 10px;
+      color: var(--ink2);
+      background: var(--bd);
+      border-radius: 4px;
       padding: 1px 6px;
     }
 
     .at-task-item {
-      display: flex; align-items: center; gap: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       padding: 9px 12px;
-      background: var(--bg); border: 1px solid var(--bd);
-      border-radius: 10px; cursor: pointer;
+      background: var(--bg);
+      border: 1px solid var(--bd);
+      border-radius: 10px;
+      cursor: pointer;
       transition: background 0.12s;
     }
-    .at-task-item:active { background: var(--bd); }
-    .at-task-item[data-st="着手中"] { border-color: rgba(208,92,20,0.4); }
-    .at-task-item[data-st="済"]     { border-color: rgba(20,56,168,0.25); }
+
+    .at-task-item:active {
+      background: var(--bd);
+    }
+
+    .at-task-item[data-st="着手中"] {
+      border-color: rgba(208, 92, 20, 0.4);
+    }
+
+    .at-task-item[data-st="済"] {
+      border-color: rgba(20, 56, 168, 0.25);
+    }
 
     .at-st-dot {
-      width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
 
     .at-task-text {
-      flex: 1; font-size: 14px; line-height: 1.4;
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.4;
     }
-    .at-task-text.done { text-decoration: line-through; color: var(--ink2); }
+
+    .at-task-text.done {
+      text-decoration: line-through;
+      color: var(--ink2);
+    }
 
     .at-room-badge {
-      font-size: 10px; color: var(--ink2);
-      font-family: 'DM Mono', monospace; flex-shrink: 0;
+      font-size: 10px;
+      color: var(--ink2);
+      font-family: 'DM Mono', monospace;
+      flex-shrink: 0;
     }
 
     .at-empty {
-      text-align: center; color: var(--ink2);
-      font-size: 14px; padding: 32px 0;
+      text-align: center;
+      color: var(--ink2);
+      font-size: 14px;
+      padding: 32px 0;
     }
 
     /* ===== SETTINGS BUTTON ===== */
     .settings-btn {
-      background: none; border: none;
-      font-size: 18px; cursor: pointer;
-      color: var(--ink2); padding: 2px 4px;
-      line-height: 1; border-radius: 6px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--ink2);
+      padding: 2px 4px;
+      line-height: 1;
+      border-radius: 6px;
       transition: background 0.15s;
     }
-    .settings-btn:active { background: var(--bd); }
+
+    .settings-btn:active {
+      background: var(--bd);
+    }
 
     /* ===== SETTINGS PANEL ===== */
     .settings-panel {
-      position: fixed; inset: 0;
+      position: fixed;
+      inset: 0;
       background: var(--paper);
       z-index: 40;
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
       transform: translateX(100%);
-      transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     }
-    .settings-panel.open { transform: translateX(0); }
+
+    .settings-panel.open {
+      transform: translateX(0);
+    }
 
     .settings-hdr {
       flex-shrink: 0;
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 14px 16px 12px;
       padding-top: max(14px, env(safe-area-inset-top));
       border-bottom: 1.5px solid var(--bd);
@@ -773,287 +1151,489 @@
     }
 
     .settings-title {
-      font-size: 17px; font-weight: 700;
+      font-size: 17px;
+      font-weight: 700;
     }
 
     .settings-body {
-      flex: 1; overflow-y: auto;
+      flex: 1;
+      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding: 16px;
       padding-bottom: max(24px, env(safe-area-inset-bottom));
-      display: flex; flex-direction: column; gap: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
     }
 
-    .settings-sec { display: flex; flex-direction: column; gap: 10px; }
+    .settings-sec {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
     .settings-desc {
-      font-size: 12px; color: var(--ink2); line-height: 1.5;
+      font-size: 12px;
+      color: var(--ink2);
+      line-height: 1.5;
     }
 
     /* Weight rows */
     .recalc-btn {
       flex-shrink: 0;
-      background: none; border: 1px solid var(--bd);
-      color: var(--ink2); font-size: 11px;
+      background: none;
+      border: 1px solid var(--bd);
+      color: var(--ink2);
+      font-size: 11px;
       font-family: 'DM Mono', monospace;
-      padding: 3px 9px; border-radius: 6px;
-      cursor: pointer; margin-right: auto;
+      padding: 3px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: auto;
     }
-    .recalc-btn:active { background: var(--bd); }
+
+    .recalc-btn:active {
+      background: var(--bd);
+    }
 
     .weight-total-row {
-      display: flex; align-items: center; gap: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       justify-content: flex-end;
     }
+
     .weight-total-lbl {
-      font-family: 'DM Mono', monospace; font-size: 11px; color: var(--ink2);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--ink2);
     }
+
     .weight-total-val {
-      font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600;
-      color: var(--ink); min-width: 32px; text-align: right;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      min-width: 32px;
+      text-align: right;
     }
-    .weight-total-val.over { color: var(--c1); }
+
+    .weight-total-val.over {
+      color: var(--c1);
+    }
 
     .weight-row {
-      display: flex; align-items: center; gap: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       padding: 8px 10px;
-      background: var(--bg); border: 1px solid var(--bd);
+      background: var(--bg);
+      border: 1px solid var(--bd);
       border-radius: 10px;
     }
 
     .weight-name {
-      font-size: 13px; width: 80px; flex-shrink: 0;
+      font-size: 13px;
+      width: 80px;
+      flex-shrink: 0;
     }
 
     input[type="range"].weight-slider {
-      flex: 1; height: 4px;
+      flex: 1;
+      height: 4px;
       accent-color: var(--ink);
       cursor: pointer;
     }
 
     .weight-num {
-      font-family: 'DM Mono', monospace; font-size: 13px;
-      width: 32px; text-align: right; flex-shrink: 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      width: 32px;
+      text-align: right;
+      flex-shrink: 0;
     }
 
     input[type="number"].weight-text-inp {
-      width: 48px; flex-shrink: 0;
-      padding: 4px 6px; text-align: right;
-      border: 1.5px solid var(--bd); border-radius: 6px;
+      width: 48px;
+      flex-shrink: 0;
+      padding: 4px 6px;
+      text-align: right;
+      border: 1.5px solid var(--bd);
+      border-radius: 6px;
       background: var(--paper);
-      font-family: 'DM Mono', monospace; font-size: 13px;
-      color: var(--ink); outline: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--ink);
+      outline: none;
       -moz-appearance: textfield;
     }
+
     input[type="number"].weight-text-inp::-webkit-inner-spin-button,
-    input[type="number"].weight-text-inp::-webkit-outer-spin-button { opacity: 1; }
-    input[type="number"].weight-text-inp:focus { border-color: #90a0b8; }
+    input[type="number"].weight-text-inp::-webkit-outer-spin-button {
+      opacity: 1;
+    }
+
+    input[type="number"].weight-text-inp:focus {
+      border-color: #90a0b8;
+    }
 
     /* Room selector tabs for default tasks */
     .room-sel-tabs {
-      display: flex; gap: 5px; flex-wrap: wrap;
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
     }
 
     .room-sel-tab {
-      padding: 5px 12px; border-radius: 20px;
+      padding: 5px 12px;
+      border-radius: 20px;
       border: 1.5px solid var(--bd);
       background: var(--bg);
-      font-size: 12px; cursor: pointer;
+      font-size: 12px;
+      cursor: pointer;
       font-family: 'Noto Sans JP', sans-serif;
       transition: all 0.12s;
     }
+
     .room-sel-tab.active {
-      background: var(--ink); color: white; border-color: var(--ink);
+      background: var(--ink);
+      color: white;
+      border-color: var(--ink);
     }
 
     /* Default task items */
     .dtask-item {
-      display: flex; align-items: center; gap: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       padding: 8px 10px;
-      background: var(--bg); border: 1px solid var(--bd);
-      border-radius: 8px; margin-top: 5px;
+      background: var(--bg);
+      border: 1px solid var(--bd);
+      border-radius: 8px;
+      margin-top: 5px;
     }
 
-    .dtask-txt { flex: 1; font-size: 14px; }
+    .dtask-txt {
+      flex: 1;
+      font-size: 14px;
+    }
 
     .dtask-apply-btn {
       flex-shrink: 0;
-      font-size: 10px; padding: 3px 8px;
-      border-radius: 5px; border: 1px solid var(--bd);
-      background: var(--paper); color: var(--ink2);
-      font-family: 'DM Mono', monospace; cursor: pointer;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid var(--bd);
+      background: var(--paper);
+      color: var(--ink2);
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
     }
-    .dtask-apply-btn:active { background: var(--bd); }
+
+    .dtask-apply-btn:active {
+      background: var(--bd);
+    }
 
     /* ===== TOAST ===== */
     .toast {
       position: fixed;
-      bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
-      background: var(--ink); color: white;
-      padding: 10px 22px; border-radius: 30px;
-      font-size: 15px; font-weight: 500;
-      pointer-events: none; opacity: 0;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--ink);
+      color: white;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 15px;
+      font-weight: 500;
+      pointer-events: none;
+      opacity: 0;
       transition: opacity 0.25s, transform 0.25s;
-      z-index: 60; white-space: nowrap;
+      z-index: 60;
+      white-space: nowrap;
       text-align: center;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     .toast.milestone {
-      padding: 16px 32px; font-size: 20px;
-      border-radius: 40px; bottom: 130px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      padding: 16px 32px;
+      font-size: 20px;
+      border-radius: 40px;
+      bottom: 130px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     }
 
     @keyframes taskDone {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.04); }
-      100% { transform: scale(1); }
+      0% {
+        transform: scale(1);
+      }
+
+      40% {
+        transform: scale(1.04);
+      }
+
+      100% {
+        transform: scale(1);
+      }
     }
-    .task-item.pop { animation: taskDone 0.3s ease; }
+
+    .task-item.pop {
+      animation: taskDone 0.3s ease;
+    }
 
     @keyframes progFlash {
-      0%,100% { opacity: 1; }
-      40%      { opacity: 0.3; }
-      70%      { opacity: 0.8; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      40% {
+        opacity: 0.3;
+      }
+
+      70% {
+        opacity: 0.8;
+      }
     }
-    .prog-wrap.flash { animation: progFlash 0.6s ease; }
+
+    .prog-wrap.flash {
+      animation: progFlash 0.6s ease;
+    }
 
     /* ===== SUBDIVIDE PROMPT ===== */
     .subdiv-prompt {
-      background: rgba(20,56,168,0.07);
-      border: 1.5px solid rgba(20,56,168,0.25);
+      background: rgba(20, 56, 168, 0.07);
+      border: 1.5px solid rgba(20, 56, 168, 0.25);
       border-radius: 10px;
       padding: 10px 12px;
-      display: none; flex-direction: column; gap: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
       margin-bottom: 8px;
     }
-    .subdiv-prompt.show { display: flex; }
+
+    .subdiv-prompt.show {
+      display: flex;
+    }
 
     .subdiv-q {
-      font-size: 13px; color: var(--ink); line-height: 1.5;
+      font-size: 13px;
+      color: var(--ink);
+      line-height: 1.5;
     }
-    .subdiv-q strong { color: var(--c5); }
+
+    .subdiv-q strong {
+      color: var(--c5);
+    }
 
     .subdiv-add-row {
-      display: flex; gap: 6px;
+      display: flex;
+      gap: 6px;
     }
 
     input.subdiv-inp {
-      flex: 1; padding: 7px 10px;
-      border: 1.5px solid var(--bd); border-radius: 8px;
+      flex: 1;
+      padding: 7px 10px;
+      border: 1.5px solid var(--bd);
+      border-radius: 8px;
       background: var(--paper);
       font-family: 'Noto Sans JP', sans-serif;
-      font-size: 13px; color: var(--ink);
-      outline: none; min-width: 0;
+      font-size: 13px;
+      color: var(--ink);
+      outline: none;
+      min-width: 0;
     }
-    input.subdiv-inp:focus { border-color: #90a0b8; }
+
+    input.subdiv-inp:focus {
+      border-color: #90a0b8;
+    }
 
     .subdiv-ok-btn {
-      flex-shrink: 0; width: 34px; height: 34px;
-      border-radius: 8px; border: none;
-      background: var(--c5); color: white;
-      font-size: 16px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      background: var(--c5);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .subdiv-footer {
-      display: flex; justify-content: flex-end;
+      display: flex;
+      justify-content: flex-end;
     }
 
     .subdiv-close-btn {
-      background: none; border: none;
-      font-size: 12px; color: var(--ink2);
+      background: none;
+      border: none;
+      font-size: 12px;
+      color: var(--ink2);
       font-family: 'DM Mono', monospace;
-      cursor: pointer; padding: 2px 6px;
-      border: 1px solid var(--bd); border-radius: 5px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border: 1px solid var(--bd);
+      border-radius: 5px;
     }
 
     /* ===== GRID EDITOR ===== */
     .ge-panel {
-      position: fixed; inset: 0;
+      position: fixed;
+      inset: 0;
       background: var(--paper);
       z-index: 40;
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
       transform: translateX(-100%);
-      transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     }
-    .ge-panel.open { transform: translateX(0); }
+
+    .ge-panel.open {
+      transform: translateX(0);
+    }
 
     .ge-hdr {
       flex-shrink: 0;
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 14px 16px 12px;
       padding-top: max(14px, env(safe-area-inset-top));
       border-bottom: 1.5px solid var(--bd);
     }
-    .ge-title { font-size: 17px; font-weight: 700; }
+
+    .ge-title {
+      font-size: 17px;
+      font-weight: 700;
+    }
 
     .ge-body {
-      flex: 1; display: flex; flex-direction: column;
-      overflow: hidden; padding: 12px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 12px 16px;
       gap: 10px;
       padding-bottom: max(16px, env(safe-area-inset-bottom));
     }
 
     /* Room chip selector */
     .ge-rooms {
-      flex-shrink: 0; display: flex; gap: 6px;
-      overflow-x: auto; -webkit-overflow-scrolling: touch;
-      scrollbar-width: none; padding-bottom: 2px;
+      flex-shrink: 0;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 2px;
     }
-    .ge-rooms::-webkit-scrollbar { display: none; }
+
+    .ge-rooms::-webkit-scrollbar {
+      display: none;
+    }
 
     .ge-room-chip {
-      flex-shrink: 0; display: flex; align-items: center; gap: 6px;
-      padding: 6px 12px; border-radius: 20px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
       border: 2px solid var(--bd);
-      background: var(--bg); cursor: pointer;
-      font-size: 12px; font-family: 'Noto Sans JP', sans-serif;
-      transition: all 0.12s; white-space: nowrap;
+      background: var(--bg);
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Noto Sans JP', sans-serif;
+      transition: all 0.12s;
+      white-space: nowrap;
     }
-    .ge-room-chip.sel { border-color: var(--ink); background: var(--ink); color: white; }
+
+    .ge-room-chip.sel {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: white;
+    }
 
     .ge-room-dot {
-      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
 
     .ge-add-room-btn {
-      flex-shrink: 0; display: flex; align-items: center; gap: 4px;
-      padding: 6px 12px; border-radius: 20px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 20px;
       border: 2px dashed var(--bd);
-      background: none; cursor: pointer;
-      font-size: 12px; color: var(--ink2);
+      background: none;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--ink2);
       font-family: 'Noto Sans JP', sans-serif;
     }
 
     /* Toolbar */
     .ge-toolbar {
-      flex-shrink: 0; display: flex; gap: 8px; align-items: center;
+      flex-shrink: 0;
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
     .ge-tool-btn {
-      padding: 6px 14px; border-radius: 8px;
+      padding: 6px 14px;
+      border-radius: 8px;
       border: 1.5px solid var(--bd);
-      background: var(--bg); color: var(--ink2);
-      font-size: 12px; cursor: pointer;
+      background: var(--bg);
+      color: var(--ink2);
+      font-size: 12px;
+      cursor: pointer;
       font-family: 'Noto Sans JP', sans-serif;
       transition: all 0.12s;
     }
-    .ge-tool-btn.active { background: var(--c1); color: white; border-color: transparent; }
+
+    .ge-tool-btn.active {
+      background: var(--c1);
+      color: white;
+      border-color: transparent;
+    }
 
     .ge-del-room-btn {
-      padding: 6px 14px; border-radius: 8px;
-      border: 1.5px solid rgba(196,32,32,0.35);
-      background: none; color: var(--c1);
-      font-size: 12px; cursor: pointer;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(196, 32, 32, 0.35);
+      background: none;
+      color: var(--c1);
+      font-size: 12px;
+      cursor: pointer;
       font-family: 'Noto Sans JP', sans-serif;
       margin-left: auto;
     }
-    .ge-del-room-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .ge-del-room-btn:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
 
     /* Grid */
     .ge-grid-wrap {
-      flex: 1; display: flex; align-items: center; justify-content: center;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
     }
 
@@ -1061,1256 +1641,1401 @@
       display: grid;
       grid-template-columns: repeat(8, 1fr);
       grid-template-rows: repeat(10, 1fr);
-      width: 100%; max-width: 320px;
+      width: 100%;
+      max-width: 320px;
       aspect-ratio: 8/10;
       border: 2.5px solid var(--ink);
-      border-radius: 4px; overflow: hidden;
+      border-radius: 4px;
+      overflow: hidden;
       touch-action: none;
     }
 
     .ge-cell {
-      border: 0.5px solid rgba(28,26,20,0.18);
+      border: 0.5px solid rgba(28, 26, 20, 0.18);
       transition: background-color 0.05s;
     }
-    .ge-cell.empty { background: #e8e4d8; }
 
+    .ge-cell.empty {
+      background: #e8e4d8;
+    }
+
+    /* ===== AUTH SCREEN ===== */
+    .auth-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .auth-screen.hidden {
+      display: none;
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .auth-logo {
+      font-size: 40px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .auth-title {
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      border: 1.5px solid var(--bd);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      background: var(--bg);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      color: var(--ink2);
+    }
+
+    .auth-tab.active {
+      background: var(--ink);
+      color: white;
+    }
+
+    .auth-err {
+      font-size: 12px;
+      color: var(--c1);
+      min-height: 16px;
+      text-align: center;
+    }
+
+    .auth-sync-note {
+      font-size: 11px;
+      color: var(--ink2);
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    /* ===== SYNC INDICATOR ===== */
+    .sync-indicator {
+      position: fixed;
+      bottom: 60px;
+      right: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--ink2);
+      background: var(--paper);
+      border: 1px solid var(--bd);
+      border-radius: 20px;
+      padding: 4px 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 35;
+    }
+
+    .sync-indicator.show {
+      opacity: 1;
+    }
   </style>
 </head>
+
 <body>
 
-<!-- Header -->
-<header class="hdr">
-  <div class="hdr-row1">
-    <span class="app-name">🏠 おへや管理</span>
-    <div style="display:flex;align-items:center;gap:10px">
-      <span class="overall-num" id="overallNum">—</span>
-      <button class="settings-btn" id="layoutBtn">🗺</button>
-      <button class="settings-btn" id="settingsBtn">⚙</button>
+  <!-- Auth Screen -->
+  <div class="auth-screen" id="authScreen">
+    <div class="auth-box">
+      <div class="auth-logo">🏠</div>
+      <div class="auth-title">おへや管理</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="authTabLogin">ログイン</button>
+        <button class="auth-tab" id="authTabSignup">新規登録</button>
+      </div>
+      <input class="rename-inp" id="authEmail" type="email" placeholder="メールアドレス" autocomplete="email">
+      <input class="rename-inp" id="authPassword" type="password" placeholder="パスワード（6文字以上）"
+        autocomplete="current-password">
+      <div class="auth-err" id="authErr"></div>
+      <button class="rename-ok" id="authSubmitBtn" style="width:100%;padding:12px;font-size:15px">ログイン</button>
+      <div class="auth-sync-note">データはクラウドに自動保存されます</div>
     </div>
   </div>
-  <div class="bar-track">
-    <div class="bar-fill" id="barFill"></div>
-  </div>
-</header>
 
-<!-- Daily Pickup Bar -->
-<div class="pickup-bar" id="pickupBar">
-  <div class="pickup-top">
-    <span class="pickup-label">TODAY</span>
-    <div class="pickup-actions">
-      <button class="timer-start-btn" id="timerStartBtn">⏱ 5分やる</button>
-      <button class="pickup-dismiss" id="pickupDismiss">×</button>
-    </div>
-  </div>
-  <div class="pickup-rooms" id="pickupRooms"></div>
-</div>
+  <!-- Sync indicator -->
+  <div class="sync-indicator" id="syncIndicator"></div>
 
-<!-- Timer Overlay -->
-<div class="timer-overlay" id="timerOverlay">
-  <div class="timer-room-name" id="timerRoomName"></div>
-  <div class="timer-ring-wrap">
-    <svg viewBox="0 0 200 200">
-      <circle class="timer-ring-bg" cx="100" cy="100" r="90"/>
-      <circle class="timer-ring-fill" id="timerRing" cx="100" cy="100" r="90"/>
-    </svg>
-    <div class="timer-digits" id="timerDigits">5:00</div>
-  </div>
-  <div class="timer-msg" id="timerMsg">集中しよう 💪</div>
-  <div class="timer-btns" id="timerBtns">
-    <button class="timer-btn timer-btn-stop" id="timerStopBtn">やめる</button>
-    <button class="timer-btn timer-btn-done" id="timerDoneBtn">完了！</button>
-  </div>
-</div>
-
-<!-- Floor plan -->
-<div class="fp-area">
-  <div class="fp-wrap">
-    <svg id="fpSvg" viewBox="0 0 320 380" xmlns="http://www.w3.org/2000/svg"></svg>
-  </div>
-</div>
-
-<!-- Legend -->
-<div class="legend">
-  <span class="leg-lbl">汚い</span>
-  <div class="leg-grad"></div>
-  <span class="leg-lbl">きれい</span>
-  <button class="alltasks-btn" id="allTasksBtn">全タスク</button>
-</div>
-
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
-<!-- Overlay -->
-<div class="overlay" id="overlay"></div>
-
-<!-- Bottom Sheet -->
-<div class="sheet" id="sheet">
-  <div class="knob"></div>
-  <div class="sh-hdr">
-    <div class="sh-dot" id="shDot"></div>
-    <span class="sh-name" id="shName">—</span>
-    <button class="rename-btn" id="renameBtn">名前変更</button>
-    <button class="close-btn" id="closeBtn">✕</button>
-  </div>
-  <div class="tab-strip" id="tabStrip"></div>
-  <div class="sub-del-bar" id="subDelBar" style="display:none">
-    <button class="sub-rename-btn" id="subRenameBtn">名前変更</button>
-    <button class="sub-del-btn" id="subDelBtn">このサブ場所を削除</button>
-  </div>
-  <div class="sh-body">
-
-    <!-- Progress -->
-    <div>
-      <div class="sec-lbl">完了度</div>
-      <div class="prog-wrap">
-        <div class="prog-top">
-          <span class="prog-pct" id="progPct">—</span>
-          <span class="prog-sub" id="progSub"></span>
-        </div>
-        <div class="prog-bar-track">
-          <div class="prog-bar-fill" id="progFill" style="width:0%"></div>
-        </div>
-        <div class="prog-breakdown" id="progBreakdown"></div>
+  <!-- Header -->
+  <header class="hdr">
+    <div class="hdr-row1">
+      <span class="app-name">🏠 おへや管理</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="overall-num" id="overallNum">—</span>
+        <button class="settings-btn" id="layoutBtn">🗺</button>
+        <button class="settings-btn" id="settingsBtn">⚙</button>
       </div>
     </div>
-
-    <!-- Quick Checks -->
-    <div>
-      <div class="sec-lbl">クイックチェック</div>
-      <div class="qcheck-list" id="qcheckList"></div>
+    <div class="bar-track">
+      <div class="bar-fill" id="barFill"></div>
     </div>
+  </header>
 
-    <!-- Notes -->
-    <div>
-      <div class="sec-lbl">メモ・現状</div>
-      <textarea class="notes" id="notesArea" placeholder="今の状況、気になる点..."></textarea>
-    </div>
-
-    <!-- Tasks (unified) -->
-    <div>
-      <div class="sec-lbl">タスク・記録</div>
-      <div class="task-add">
-        <input class="task-inp" id="taskInp" placeholder="タスクを追加...">
-        <button class="add-btn" id="addTaskBtn">＋</button>
+  <!-- Daily Pickup Bar -->
+  <div class="pickup-bar" id="pickupBar">
+    <div class="pickup-top">
+      <span class="pickup-label">TODAY</span>
+      <div class="pickup-actions">
+        <button class="timer-start-btn" id="timerStartBtn">⏱ 5分やる</button>
+        <button class="pickup-dismiss" id="pickupDismiss">×</button>
       </div>
-      <div class="subdiv-prompt" id="subdivPrompt">
-        <div class="subdiv-q">「<strong id="subdivParent"></strong>」をもっと細かく分けられますか？</div>
-        <div class="subdiv-add-row">
-          <input class="subdiv-inp" id="subdivInp" placeholder="小さなステップを追加...">
-          <button class="subdiv-ok-btn" id="subdivOkBtn">＋</button>
-        </div>
-        <div class="subdiv-footer">
-          <button class="subdiv-close-btn" id="subdivCloseBtn">このままでいい</button>
+    </div>
+    <div class="pickup-rooms" id="pickupRooms"></div>
+  </div>
+
+  <!-- Timer Overlay -->
+  <div class="timer-overlay" id="timerOverlay">
+    <div class="timer-room-name" id="timerRoomName"></div>
+    <div class="timer-ring-wrap">
+      <svg viewBox="0 0 200 200">
+        <circle class="timer-ring-bg" cx="100" cy="100" r="90" />
+        <circle class="timer-ring-fill" id="timerRing" cx="100" cy="100" r="90" />
+      </svg>
+      <div class="timer-digits" id="timerDigits">5:00</div>
+    </div>
+    <div class="timer-msg" id="timerMsg">集中しよう 💪</div>
+    <div class="timer-btns" id="timerBtns">
+      <button class="timer-btn timer-btn-stop" id="timerStopBtn">やめる</button>
+      <button class="timer-btn timer-btn-done" id="timerDoneBtn">完了！</button>
+    </div>
+  </div>
+
+  <!-- Floor plan -->
+  <div class="fp-area">
+    <div class="fp-wrap">
+      <svg id="fpSvg" viewBox="0 0 320 380" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span class="leg-lbl">汚い</span>
+    <div class="leg-grad"></div>
+    <span class="leg-lbl">きれい</span>
+    <button class="alltasks-btn" id="allTasksBtn">全タスク</button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Bottom Sheet -->
+  <div class="sheet" id="sheet">
+    <div class="knob"></div>
+    <div class="sh-hdr">
+      <div class="sh-dot" id="shDot"></div>
+      <span class="sh-name" id="shName">—</span>
+      <button class="rename-btn" id="renameBtn">名前変更</button>
+      <button class="close-btn" id="closeBtn">✕</button>
+    </div>
+    <div class="tab-strip" id="tabStrip"></div>
+    <div class="sub-del-bar" id="subDelBar" style="display:none">
+      <button class="sub-rename-btn" id="subRenameBtn">名前変更</button>
+      <button class="sub-del-btn" id="subDelBtn">このサブ場所を削除</button>
+    </div>
+    <div class="sh-body">
+
+      <!-- Progress -->
+      <div>
+        <div class="sec-lbl">完了度</div>
+        <div class="prog-wrap">
+          <div class="prog-top">
+            <span class="prog-pct" id="progPct">—</span>
+            <span class="prog-sub" id="progSub"></span>
+          </div>
+          <div class="prog-bar-track">
+            <div class="prog-bar-fill" id="progFill" style="width:0%"></div>
+          </div>
+          <div class="prog-breakdown" id="progBreakdown"></div>
         </div>
       </div>
-      <div class="task-list" id="taskList"></div>
-    </div>
 
-  </div>
-</div>
-
-<!-- Rename Modal -->
-<div class="rename-modal" id="renameModal">
-  <div class="rename-box">
-    <h3>場所名を変更</h3>
-    <input class="rename-inp" id="renameInp" placeholder="場所の名前...">
-    <div class="rename-btns">
-      <button class="rename-cancel" id="renameCancelBtn">キャンセル</button>
-      <button class="rename-ok" id="renameOkBtn">変更</button>
-    </div>
-  </div>
-</div>
-
-<!-- Subplace Modal -->
-<div class="rename-modal" id="subModal">
-  <div class="rename-box">
-    <h3 id="subModalTitle">サブ場所を追加</h3>
-    <input class="rename-inp" id="subInp" placeholder="例：ベッド下、本棚...">
-    <div class="rename-btns">
-      <button class="rename-cancel" id="subCancelBtn">キャンセル</button>
-      <button class="rename-ok" id="subOkBtn">確定</button>
-    </div>
-  </div>
-</div>
-
-<!-- Grid Editor Panel -->
-<div class="ge-panel" id="gePanel">
-  <div class="ge-hdr">
-    <span class="ge-title">間取り編集</span>
-    <button class="close-btn" id="geCloseBtn">✕</button>
-  </div>
-  <div class="ge-body">
-    <div class="ge-rooms" id="geRooms"></div>
-    <div class="ge-toolbar">
-      <button class="ge-tool-btn" id="geEraseBtn">消しゴム</button>
-      <button class="ge-del-room-btn" id="geDelRoomBtn" disabled>部屋を削除</button>
-    </div>
-    <div class="ge-grid-wrap">
-      <div class="ge-grid" id="geGrid"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Add Room Modal -->
-<div class="rename-modal" id="addRoomModal" style="z-index:50">
-  <div class="rename-box">
-    <h3>部屋を追加</h3>
-    <input class="rename-inp" id="addRoomInp" placeholder="部屋の名前...">
-    <div class="rename-btns">
-      <button class="rename-cancel" id="addRoomCancelBtn">キャンセル</button>
-      <button class="rename-ok" id="addRoomOkBtn">追加</button>
-    </div>
-  </div>
-</div>
-
-<!-- All Tasks Panel -->
-<div class="settings-panel" id="allTasksPanel">
-  <div class="settings-hdr">
-    <span class="settings-title">全タスク</span>
-    <button class="close-btn" id="allTasksCloseBtn">✕</button>
-  </div>
-  <div class="at-filter" id="atFilter">
-    <button class="at-tab active" data-f="全て">全て</button>
-    <button class="at-tab" data-f="着手中">着手中</button>
-    <button class="at-tab" data-f="未着手">未着手</button>
-    <button class="at-tab" data-f="済">済</button>
-  </div>
-  <div class="settings-body" style="gap:16px" id="allTasksList"></div>
-</div>
-
-<!-- Settings Panel -->
-<div class="settings-panel" id="settingsPanel">
-  <div class="settings-hdr">
-    <span class="settings-title">設定</span>
-    <button class="close-btn" id="settingsCloseBtn">✕</button>
-  </div>
-  <div class="settings-body">
-
-    <!-- Room weights -->
-    <div class="settings-sec">
-      <div class="sec-lbl">部屋の重み（全体完了度への影響）</div>
-      <div class="weight-total-row">
-        <button class="recalc-btn" onclick="recalcWeights()">マス目から再計算</button>
-        <span class="weight-total-lbl">合計</span>
-        <span class="weight-total-val" id="weightTotal">100</span>
+      <!-- Quick Checks -->
+      <div>
+        <div class="sec-lbl">クイックチェック</div>
+        <div class="qcheck-list" id="qcheckList"></div>
       </div>
-      <div id="weightList"></div>
-    </div>
 
-    <!-- Default tasks -->
-    <div class="settings-sec">
-      <div class="sec-lbl">デフォルトタスク</div>
-      <p class="settings-desc">部屋を新規作成したとき・または「適用」ボタンで既存の部屋に追加されます</p>
-      <div id="defaultTaskRoomSel" class="room-sel-tabs"></div>
-      <div class="task-add" style="margin-top:8px">
-        <input class="task-inp" id="dtaskInp" placeholder="タスクを入力...">
-        <button class="add-btn" id="dtaskAddBtn">＋</button>
+      <!-- Notes -->
+      <div>
+        <div class="sec-lbl">メモ・現状</div>
+        <textarea class="notes" id="notesArea" placeholder="今の状況、気になる点..."></textarea>
       </div>
-      <div id="dtaskList"></div>
+
+      <!-- Tasks (unified) -->
+      <div>
+        <div class="sec-lbl">タスク・記録</div>
+        <div class="task-add">
+          <input class="task-inp" id="taskInp" placeholder="タスクを追加...">
+          <button class="add-btn" id="addTaskBtn">＋</button>
+        </div>
+        <div class="subdiv-prompt" id="subdivPrompt">
+          <div class="subdiv-q">「<strong id="subdivParent"></strong>」をもっと細かく分けられますか？</div>
+          <div class="subdiv-add-row">
+            <input class="subdiv-inp" id="subdivInp" placeholder="小さなステップを追加...">
+            <button class="subdiv-ok-btn" id="subdivOkBtn">＋</button>
+          </div>
+          <div class="subdiv-footer">
+            <button class="subdiv-close-btn" id="subdivCloseBtn">このままでいい</button>
+          </div>
+        </div>
+        <div class="task-list" id="taskList"></div>
+      </div>
+
     </div>
-
   </div>
-</div>
 
-<script>
-// ============================================================
-// Constants & Data Definitions
-// ============================================================
-const GRID_COLS = 8, GRID_ROWS = 10;
-const CELL_W = 320 / GRID_COLS, CELL_H = 380 / GRID_ROWS; // 40 × 38
+  <!-- Rename Modal -->
+  <div class="rename-modal" id="renameModal">
+    <div class="rename-box">
+      <h3>場所名を変更</h3>
+      <input class="rename-inp" id="renameInp" placeholder="場所の名前...">
+      <div class="rename-btns">
+        <button class="rename-cancel" id="renameCancelBtn">キャンセル</button>
+        <button class="rename-ok" id="renameOkBtn">変更</button>
+      </div>
+    </div>
+  </div>
 
-const ROOM_COLORS = [
-  '#d4a878','#8aba8a','#82a8c8','#b890b0',
-  '#98ba80','#c8a880','#82bab8','#c8c880',
-];
+  <!-- Subplace Modal -->
+  <div class="rename-modal" id="subModal">
+    <div class="rename-box">
+      <h3 id="subModalTitle">サブ場所を追加</h3>
+      <input class="rename-inp" id="subInp" placeholder="例：ベッド下、本棚...">
+      <div class="rename-btns">
+        <button class="rename-cancel" id="subCancelBtn">キャンセル</button>
+        <button class="rename-ok" id="subOkBtn">確定</button>
+      </div>
+    </div>
+  </div>
 
-const COLORS   = ['','#c42020','#d05c14','#b08c08','#1478b4','#1438a8'];
-const COLORS_A = ['','rgba(196,32,32,.65)','rgba(208,92,20,.65)','rgba(176,140,8,.65)','rgba(20,120,180,.65)','rgba(20,56,168,.65)'];
+  <!-- Grid Editor Panel -->
+  <div class="ge-panel" id="gePanel">
+    <div class="ge-hdr">
+      <span class="ge-title">間取り編集</span>
+      <button class="close-btn" id="geCloseBtn">✕</button>
+    </div>
+    <div class="ge-body">
+      <div class="ge-rooms" id="geRooms"></div>
+      <div class="ge-toolbar">
+        <button class="ge-tool-btn" id="geEraseBtn">消しゴム</button>
+        <button class="ge-del-room-btn" id="geDelRoomBtn" disabled>部屋を削除</button>
+      </div>
+      <div class="ge-grid-wrap">
+        <div class="ge-grid" id="geGrid"></div>
+      </div>
+    </div>
+  </div>
 
-// Distribute 100 points proportionally to cell count (largest remainder method)
-function calcWeightsFromGrid(cells, roomList) {
-  const counts = {};
-  roomList.forEach(r => { counts[r.id] = 0; });
-  for (let row = 0; row < GRID_ROWS; row++)
-    for (let col = 0; col < GRID_COLS; col++) {
-      const rid = cells[row]?.[col];
-      if (rid && counts[rid] !== undefined) counts[rid]++;
+  <!-- Add Room Modal -->
+  <div class="rename-modal" id="addRoomModal" style="z-index:50">
+    <div class="rename-box">
+      <h3>部屋を追加</h3>
+      <input class="rename-inp" id="addRoomInp" placeholder="部屋の名前...">
+      <div class="rename-btns">
+        <button class="rename-cancel" id="addRoomCancelBtn">キャンセル</button>
+        <button class="rename-ok" id="addRoomOkBtn">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- All Tasks Panel -->
+  <div class="settings-panel" id="allTasksPanel">
+    <div class="settings-hdr">
+      <span class="settings-title">全タスク</span>
+      <button class="close-btn" id="allTasksCloseBtn">✕</button>
+    </div>
+    <div class="at-filter" id="atFilter">
+      <button class="at-tab active" data-f="全て">全て</button>
+      <button class="at-tab" data-f="着手中">着手中</button>
+      <button class="at-tab" data-f="未着手">未着手</button>
+      <button class="at-tab" data-f="済">済</button>
+    </div>
+    <div class="settings-body" style="gap:16px" id="allTasksList"></div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-hdr">
+      <span class="settings-title">設定</span>
+      <button class="close-btn" id="settingsCloseBtn">✕</button>
+    </div>
+    <div class="settings-body">
+
+      <!-- Room weights -->
+      <div class="settings-sec">
+        <div class="sec-lbl">部屋の重み（全体完了度への影響）</div>
+        <div class="weight-total-row">
+          <button class="recalc-btn" onclick="recalcWeights()">マス目から再計算</button>
+          <span class="weight-total-lbl">合計</span>
+          <span class="weight-total-val" id="weightTotal">100</span>
+        </div>
+        <div id="weightList"></div>
+      </div>
+
+      <!-- Default tasks -->
+      <div class="settings-sec">
+        <div class="sec-lbl">デフォルトタスク</div>
+        <p class="settings-desc">部屋を新規作成したとき・または「適用」ボタンで既存の部屋に追加されます</p>
+        <div id="defaultTaskRoomSel" class="room-sel-tabs"></div>
+        <div class="task-add" style="margin-top:8px">
+          <input class="task-inp" id="dtaskInp" placeholder="タスクを入力...">
+          <button class="add-btn" id="dtaskAddBtn">＋</button>
+        </div>
+        <div id="dtaskList"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // Constants & Data Definitions
+    // ============================================================
+    const GRID_COLS = 8, GRID_ROWS = 10;
+    const CELL_W = 320 / GRID_COLS, CELL_H = 380 / GRID_ROWS; // 40 × 38
+
+    const ROOM_COLORS = [
+      '#d4a878', '#8aba8a', '#82a8c8', '#b890b0',
+      '#98ba80', '#c8a880', '#82bab8', '#c8c880',
+    ];
+
+    // Continuous color interpolation: 0→red, 0.25→orange, 0.5→yellow, 0.75→blue, 1→indigo
+    const COLOR_STOPS = [
+      [0, 140, 10, 10],
+      [0.15, 190, 30, 20],
+      [0.30, 210, 85, 15],
+      [0.45, 195, 145, 10],
+      [0.55, 160, 155, 10],
+      [0.70, 20, 130, 160],
+      [0.85, 20, 80, 175],
+      [1.0, 15, 45, 160],
+    ];
+
+    function scoreToColor(s, alpha = 1) {
+      if (s === null) return alpha < 1 ? 'rgba(180,175,165,0.4)' : '#b4afa5';
+      s = Math.max(0, Math.min(1, s));
+      let lo = COLOR_STOPS[0], hi = COLOR_STOPS[COLOR_STOPS.length - 1];
+      for (let i = 0; i < COLOR_STOPS.length - 1; i++) {
+        if (s >= COLOR_STOPS[i][0] && s <= COLOR_STOPS[i + 1][0]) {
+          lo = COLOR_STOPS[i]; hi = COLOR_STOPS[i + 1]; break;
+        }
+      }
+      const t = lo[0] === hi[0] ? 0 : (s - lo[0]) / (hi[0] - lo[0]);
+      const r = Math.round(lo[1] + t * (hi[1] - lo[1]));
+      const g = Math.round(lo[2] + t * (hi[2] - lo[2]));
+      const b = Math.round(lo[3] + t * (hi[3] - lo[3]));
+      return alpha < 1 ? `rgba(${r},${g},${b},${alpha})` : `rgb(${r},${g},${b})`;
     }
-  const total = Object.values(counts).reduce((a,b) => a+b, 0);
-  if (total === 0) { roomList.forEach(r => r.weight = Math.round(100/roomList.length)); return; }
 
-  // Largest remainder method
-  const quotients = roomList.map(r => ({
-    id: r.id,
-    q: total > 0 ? (counts[r.id] / total * 100) : 0,
-    floor: 0, rem: 0
-  }));
-  quotients.forEach(x => { x.floor = Math.floor(x.q); x.rem = x.q - x.floor; });
-  let remainder = 100 - quotients.reduce((s, x) => s + x.floor, 0);
-  quotients.sort((a,b) => b.rem - a.rem);
-  quotients.forEach((x, i) => { x.floor += i < remainder ? 1 : 0; });
-  const result = {};
-  quotients.forEach(x => { result[x.id] = x.floor; });
-  roomList.forEach(r => { r.weight = result[r.id] ?? 0; });
-}
+    // Distribute 100 points proportionally to cell count (largest remainder method)
+    function calcWeightsFromGrid(cells, roomList) {
+      const counts = {};
+      roomList.forEach(r => { counts[r.id] = 0; });
+      for (let row = 0; row < GRID_ROWS; row++)
+        for (let col = 0; col < GRID_COLS; col++) {
+          const rid = cells[row]?.[col];
+          if (rid && counts[rid] !== undefined) counts[rid]++;
+        }
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      if (total === 0) { roomList.forEach(r => r.weight = Math.round(100 / roomList.length)); return; }
 
-function makeDefaultGridData() {
-  const cells = Array.from({length: GRID_ROWS}, () => Array(GRID_COLS).fill(null));
-  const paint = (id, rs, re, cs, ce) => {
-    for (let r = rs; r <= re; r++) for (let c = cs; c <= ce; c++) cells[r][c] = id;
-  };
-  paint('main',     0, 4, 0, 4);
-  paint('closet',   0, 2, 5, 5);
-  paint('toilet',   0, 2, 6, 7);
-  paint('washroom', 3, 4, 5, 7);
-  paint('kitchen',  5, 7, 0, 4);
-  paint('bath',     5, 7, 5, 7);
-  paint('entrance', 8, 9, 0, 7);
-  const rooms = [
-    { id:'main',     colorIdx:0 },
-    { id:'closet',   colorIdx:1 },
-    { id:'toilet',   colorIdx:2 },
-    { id:'washroom', colorIdx:3 },
-    { id:'kitchen',  colorIdx:4 },
-    { id:'bath',     colorIdx:5 },
-    { id:'entrance', colorIdx:6 },
-  ].map(r => ({...r, weight:0}));
-  calcWeightsFromGrid(cells, rooms);
-  return { cells, rooms };
-}
-
-// Default room names (for initial creation only)
-const DEFAULT_NAMES = {
-  main:'洋室', closet:'クローゼット', toilet:'トイレ',
-  washroom:'洗面所', kitchen:'キッチン', bath:'バスルーム', entrance:'玄関'
-};
-
-// ============================================================
-// State
-// ============================================================
-let gridData = { cells: [], rooms: [] };
-let rooms = [];
-let activeId = null;
-let activeSubId = null;
-
-function getActiveCtx() {
-  if (!activeId) return null;
-  const room = getRoom(activeId);
-  if (!activeSubId) return room;
-  return room.subplaces.find(s => s.id === activeSubId) || room;
-}
-
-function loadGridData() {
-  const saved = localStorage.getItem('oheya_grid');
-  if (saved) {
-    gridData = JSON.parse(saved);
-  } else {
-    gridData = makeDefaultGridData();
-    // Migrate weights from old oheya_weights
-    const w = localStorage.getItem('oheya_weights');
-    if (w) {
-      const weights = JSON.parse(w);
-      gridData.rooms.forEach(r => { if (weights[r.id] != null) r.weight = weights[r.id]; });
+      // Largest remainder method
+      const quotients = roomList.map(r => ({
+        id: r.id,
+        q: total > 0 ? (counts[r.id] / total * 100) : 0,
+        floor: 0, rem: 0
+      }));
+      quotients.forEach(x => { x.floor = Math.floor(x.q); x.rem = x.q - x.floor; });
+      let remainder = 100 - quotients.reduce((s, x) => s + x.floor, 0);
+      quotients.sort((a, b) => b.rem - a.rem);
+      quotients.forEach((x, i) => { x.floor += i < remainder ? 1 : 0; });
+      const result = {};
+      quotients.forEach(x => { result[x.id] = x.floor; });
+      roomList.forEach(r => { r.weight = result[r.id] ?? 0; });
     }
-  }
-}
 
-function saveGridData() {
-  localStorage.setItem('oheya_grid', JSON.stringify(gridData));
-}
+    function makeDefaultGridData() {
+      const cells = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(null));
+      const paint = (id, rs, re, cs, ce) => {
+        for (let r = rs; r <= re; r++) for (let c = cs; c <= ce; c++) cells[r][c] = id;
+      };
+      paint('main', 0, 4, 0, 4);
+      paint('closet', 0, 2, 5, 5);
+      paint('toilet', 0, 2, 6, 7);
+      paint('washroom', 3, 4, 5, 7);
+      paint('kitchen', 5, 7, 0, 4);
+      paint('bath', 5, 7, 5, 7);
+      paint('entrance', 8, 9, 0, 7);
+      const rooms = [
+        { id: 'main', colorIdx: 0 },
+        { id: 'closet', colorIdx: 1 },
+        { id: 'toilet', colorIdx: 2 },
+        { id: 'washroom', colorIdx: 3 },
+        { id: 'kitchen', colorIdx: 4 },
+        { id: 'bath', colorIdx: 5 },
+        { id: 'entrance', colorIdx: 6 },
+      ].map(r => ({ ...r, weight: 0 }));
+      calcWeightsFromGrid(cells, rooms);
+      return { cells, rooms };
+    }
 
-function getGridRoom(id) { return gridData.rooms.find(r => r.id === id); }
-function getRoom(id)     { return rooms.find(r => r.id === id); }
-function nextColorIdx()  {
-  const used = new Set(gridData.rooms.map(r => r.colorIdx));
-  for (let i = 0; i < ROOM_COLORS.length; i++) if (!used.has(i)) return i;
-  return gridData.rooms.length % ROOM_COLORS.length;
-}
+    // Default room names (for initial creation only)
+    const DEFAULT_NAMES = {
+      main: '洋室', closet: 'クローゼット', toilet: 'トイレ',
+      washroom: '洗面所', kitchen: 'キッチン', bath: 'バスルーム', entrance: '玄関'
+    };
 
-function loadData() {
-  const saved = localStorage.getItem('oheya_v2');
-  if (saved) {
-    rooms = JSON.parse(saved).map(migrateRoom);
-    for (const gr of gridData.rooms) {
-      if (!rooms.find(r => r.id === gr.id)) {
-        rooms.push({ id: gr.id, name: DEFAULT_NAMES[gr.id] || gr.id,
-          notes:'', tasks:[], subplaces:[], checks:{floor:false,trash:false} });
+    // ============================================================
+    // State
+    // ============================================================
+    let gridData = { cells: [], rooms: [] };
+    let rooms = [];
+    let activeId = null;
+    let activeSubId = null;
+
+    function getActiveCtx() {
+      if (!activeId) return null;
+      const room = getRoom(activeId);
+      if (!activeSubId) return room;
+      return room.subplaces.find(s => s.id === activeSubId) || room;
+    }
+
+    function loadGridData() {
+      const saved = localStorage.getItem('oheya_grid');
+      if (saved) {
+        gridData = JSON.parse(saved);
+      } else {
+        gridData = makeDefaultGridData();
+        // Migrate weights from old oheya_weights
+        const w = localStorage.getItem('oheya_weights');
+        if (w) {
+          const weights = JSON.parse(w);
+          gridData.rooms.forEach(r => { if (weights[r.id] != null) r.weight = weights[r.id]; });
+        }
       }
     }
-  } else {
-    rooms = gridData.rooms.map(gr => ({
-      id: gr.id, name: DEFAULT_NAMES[gr.id] || gr.id,
-      notes:'', tasks:[], subplaces:[], checks:{floor:false,trash:false}
-    }));
-  }
-}
 
-function mkSubplace(name) {
-  return { id: `sp_${Date.now()}${Math.random()}`, name, notes: '', tasks: [], checks: { floor: false, trash: false } };
-}
-
-function migrateCtx(ctx) {
-  // Merge old todos + logs into unified tasks
-  if (!ctx.tasks) {
-    ctx.tasks = [];
-    for (const t of (ctx.todos || [])) {
-      ctx.tasks.push({ id: t.id, text: t.text, status: t.done ? '済' : '未着手', date: '' });
+    function saveGridData() {
+      localStorage.setItem('oheya_grid', JSON.stringify(gridData));
     }
-    for (const l of (ctx.logs || [])) {
-      const existing = ctx.tasks.find(t => t.text.trim().toLowerCase() === l.content.trim().toLowerCase());
-      if (existing) { existing.date = l.date; existing.status = '済'; }
-      else ctx.tasks.push({ id: l.id, text: l.content, status: '済', date: l.date });
+
+    function getGridRoom(id) { return gridData.rooms.find(r => r.id === id); }
+    function getRoom(id) { return rooms.find(r => r.id === id); }
+    function nextColorIdx() {
+      const used = new Set(gridData.rooms.map(r => r.colorIdx));
+      for (let i = 0; i < ROOM_COLORS.length; i++) if (!used.has(i)) return i;
+      return gridData.rooms.length % ROOM_COLORS.length;
     }
-    delete ctx.todos;
-    delete ctx.logs;
-  }
-  if (!ctx.checks) ctx.checks = { floor: false, trash: false };
-  return ctx;
-}
 
-function migrateRoom(room) {
-  migrateCtx(room);
-  if (!room.subplaces) room.subplaces = [];
-  for (const sub of room.subplaces) migrateCtx(sub);
-  return room;
-}
+    function loadData() {
+      const saved = localStorage.getItem('oheya_v2');
+      if (saved) {
+        rooms = JSON.parse(saved).map(migrateRoom);
+        for (const gr of gridData.rooms) {
+          if (!rooms.find(r => r.id === gr.id)) {
+            rooms.push({
+              id: gr.id, name: DEFAULT_NAMES[gr.id] || gr.id,
+              notes: '', tasks: [], subplaces: [], checks: { floor: false, trash: false }
+            });
+          }
+        }
+      } else {
+        rooms = gridData.rooms.map(gr => ({
+          id: gr.id, name: DEFAULT_NAMES[gr.id] || gr.id,
+          notes: '', tasks: [], subplaces: [], checks: { floor: false, trash: false }
+        }));
+      }
+    }
 
-function save() {
-  localStorage.setItem('oheya_v2', JSON.stringify(rooms));
-}
+    function mkSubplace(name) {
+      return { id: `sp_${Date.now()}${Math.random()}`, name, notes: '', tasks: [], checks: { floor: false, trash: false } };
+    }
 
-// ============================================================
-// Tab Strip & Subplace Management
-// ============================================================
-function renderTabs() {
-  const room = getRoom(activeId);
-  if (!room) return;
-  const strip = document.getElementById('tabStrip');
+    function migrateCtx(ctx) {
+      // Merge old todos + logs into unified tasks
+      if (!ctx.tasks) {
+        ctx.tasks = [];
+        for (const t of (ctx.todos || [])) {
+          ctx.tasks.push({ id: t.id, text: t.text, status: t.done ? '済' : '未着手', date: '' });
+        }
+        for (const l of (ctx.logs || [])) {
+          const existing = ctx.tasks.find(t => t.text.trim().toLowerCase() === l.content.trim().toLowerCase());
+          if (existing) { existing.date = l.date; existing.status = '済'; }
+          else ctx.tasks.push({ id: l.id, text: l.content, status: '済', date: l.date });
+        }
+        delete ctx.todos;
+        delete ctx.logs;
+      }
+      if (!ctx.checks) ctx.checks = { floor: false, trash: false };
+      return ctx;
+    }
 
-  const tabs = [
-    { id: null, label: '部屋全体' },
-    ...room.subplaces.map(s => ({ id: s.id, label: s.name }))
-  ];
+    function migrateRoom(room) {
+      migrateCtx(room);
+      if (!room.subplaces) room.subplaces = [];
+      for (const sub of room.subplaces) migrateCtx(sub);
+      return room;
+    }
 
-  strip.innerHTML = tabs.map(t => `
+    function save() {
+      localStorage.setItem('oheya_v2', JSON.stringify(rooms));
+    }
+
+    // ============================================================
+    // Tab Strip & Subplace Management
+    // ============================================================
+    function renderTabs() {
+      const room = getRoom(activeId);
+      if (!room) return;
+      const strip = document.getElementById('tabStrip');
+
+      const tabs = [
+        { id: null, label: '部屋全体' },
+        ...room.subplaces.map(s => ({ id: s.id, label: s.name }))
+      ];
+
+      strip.innerHTML = tabs.map(t => `
     <button class="tab-btn ${t.id === activeSubId ? 'active' : ''}"
       onclick="switchTab(${t.id === null ? 'null' : `'${t.id}'`})">
       ${esc(t.label)}
     </button>
   `).join('') + `<button class="tab-add-btn" id="tabAddBtn" title="サブ場所を追加">＋</button>`;
 
-  document.getElementById('tabAddBtn').addEventListener('click', openSubModal);
+      document.getElementById('tabAddBtn').addEventListener('click', openSubModal);
 
-  // Show/hide sub-del-bar
-  document.getElementById('subDelBar').style.display = activeSubId ? 'flex' : 'none';
-}
+      // Show/hide sub-del-bar
+      document.getElementById('subDelBar').style.display = activeSubId ? 'flex' : 'none';
+    }
 
-function switchTab(subId) {
-  const ctx = getActiveCtx();
-  if (ctx) ctx.notes = document.getElementById('notesArea').value;
-  save();
-  hideSubdivPrompt();
-  activeSubId = subId;
-  renderTabs();
-  renderSheetBody();
-}
+    function switchTab(subId) {
+      const ctx = getActiveCtx();
+      if (ctx) ctx.notes = document.getElementById('notesArea').value;
+      save();
+      hideSubdivPrompt();
+      activeSubId = subId;
+      renderTabs();
+      renderSheetBody();
+    }
 
-function renderSheetBody() {
-  const ctx = getActiveCtx();
-  if (!ctx) return;
-  document.getElementById('notesArea').value = ctx.notes;
-  renderProgress(ctx);
-  renderChecks(ctx);
-  renderTasks(ctx);
-}
+    function renderSheetBody() {
+      const ctx = getActiveCtx();
+      if (!ctx) return;
+      document.getElementById('notesArea').value = ctx.notes;
+      renderProgress(ctx);
+      renderChecks(ctx);
+      renderTasks(ctx);
+    }
 
-// ============================================================
-// Quick Checks
-// ============================================================
-const QUICK_CHECKS = [
-  { key: 'floor', label: '床の上に物がない' },
-  { key: 'trash', label: 'ゴミがない' },
-];
+    // ============================================================
+    // Quick Checks
+    // ============================================================
+    const QUICK_CHECKS = [
+      { key: 'floor', label: '床の上に物がない' },
+      { key: 'trash', label: 'ゴミがない' },
+    ];
 
-function renderChecks(ctx) {
-  const c = document.getElementById('qcheckList');
-  c.innerHTML = QUICK_CHECKS.map(qc => {
-    const on = ctx.checks[qc.key];
-    return `
+    function renderChecks(ctx) {
+      const c = document.getElementById('qcheckList');
+      c.innerHTML = QUICK_CHECKS.map(qc => {
+        const on = ctx.checks[qc.key];
+        return `
       <div class="qcheck-item ${on ? 'checked' : ''}" onclick="toggleCheck('${qc.key}')">
         <div class="qcheck-box">${on ? '✓' : ''}</div>
         <span class="qcheck-lbl">${qc.label}</span>
       </div>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-function toggleCheck(key) {
-  if (!activeId) return;
-  const ctx = getActiveCtx();
-  ctx.checks[key] = !ctx.checks[key];
-  save();
-  renderChecks(ctx);
-  renderProgress(ctx);
-  renderFP();
-  renderOverall();
-}
+    function toggleCheck(key) {
+      if (!activeId) return;
+      const ctx = getActiveCtx();
+      ctx.checks[key] = !ctx.checks[key];
+      save();
+      renderChecks(ctx);
+      renderProgress(ctx);
+      renderFP();
+      renderOverall();
+    }
 
-// Add subplace modal
-let subModalMode = 'add'; // 'add' or 'rename'
+    // Add subplace modal
+    let subModalMode = 'add'; // 'add' or 'rename'
 
-function openSubModal() {
-  subModalMode = 'add';
-  document.getElementById('subModalTitle').textContent = 'サブ場所を追加';
-  document.getElementById('subInp').value = '';
-  document.getElementById('subModal').classList.add('on');
-  setTimeout(() => document.getElementById('subInp').focus(), 100);
-}
+    function openSubModal() {
+      subModalMode = 'add';
+      document.getElementById('subModalTitle').textContent = 'サブ場所を追加';
+      document.getElementById('subInp').value = '';
+      document.getElementById('subModal').classList.add('on');
+      setTimeout(() => document.getElementById('subInp').focus(), 100);
+    }
 
-function openSubRename() {
-  if (!activeSubId) return;
-  const room = getRoom(activeId);
-  const sub = room.subplaces.find(s => s.id === activeSubId);
-  if (!sub) return;
-  subModalMode = 'rename';
-  document.getElementById('subModalTitle').textContent = 'サブ場所名を変更';
-  document.getElementById('subInp').value = sub.name;
-  document.getElementById('subModal').classList.add('on');
-  setTimeout(() => document.getElementById('subInp').focus(), 100);
-}
+    function openSubRename() {
+      if (!activeSubId) return;
+      const room = getRoom(activeId);
+      const sub = room.subplaces.find(s => s.id === activeSubId);
+      if (!sub) return;
+      subModalMode = 'rename';
+      document.getElementById('subModalTitle').textContent = 'サブ場所名を変更';
+      document.getElementById('subInp').value = sub.name;
+      document.getElementById('subModal').classList.add('on');
+      setTimeout(() => document.getElementById('subInp').focus(), 100);
+    }
 
-function closeSubModal() {
-  document.getElementById('subModal').classList.remove('on');
-}
+    function closeSubModal() {
+      document.getElementById('subModal').classList.remove('on');
+    }
 
-function doSubModal() {
-  const name = document.getElementById('subInp').value.trim();
-  if (!name) { closeSubModal(); return; }
-  const room = getRoom(activeId);
-  if (subModalMode === 'add') {
-    const sub = mkSubplace(name);
-    room.subplaces.push(sub);
-    activeSubId = sub.id;
-  } else {
-    const sub = room.subplaces.find(s => s.id === activeSubId);
-    if (sub) sub.name = name;
-  }
-  save();
-  renderTabs();
-  renderSheetBody();
-  closeSubModal();
-}
+    function doSubModal() {
+      const name = document.getElementById('subInp').value.trim();
+      if (!name) { closeSubModal(); return; }
+      const room = getRoom(activeId);
+      if (subModalMode === 'add') {
+        const sub = mkSubplace(name);
+        room.subplaces.push(sub);
+        activeSubId = sub.id;
+      } else {
+        const sub = room.subplaces.find(s => s.id === activeSubId);
+        if (sub) sub.name = name;
+      }
+      save();
+      renderTabs();
+      renderSheetBody();
+      closeSubModal();
+    }
 
-function delSubplace() {
-  if (!activeSubId || !activeId) return;
-  const room = getRoom(activeId);
-  const subName = room.subplaces.find(s => s.id === activeSubId)?.name || 'このサブ場所';
-  if (!confirm(`「${subName}」を削除しますか？`)) return;
-  room.subplaces = room.subplaces.filter(s => s.id !== activeSubId);
-  activeSubId = null;
-  save();
-  renderTabs();
-  renderSheetBody();
-}
+    function delSubplace() {
+      if (!activeSubId || !activeId) return;
+      const room = getRoom(activeId);
+      const subName = room.subplaces.find(s => s.id === activeSubId)?.name || 'このサブ場所';
+      if (!confirm(`「${subName}」を削除しますか？`)) return;
+      room.subplaces = room.subplaces.filter(s => s.id !== activeSubId);
+      activeSubId = null;
+      save();
+      renderTabs();
+      renderSheetBody();
+    }
 
-// ============================================================
-// SVG Floor Plan
-// ============================================================
-const NS = 'http://www.w3.org/2000/svg';
+    // ============================================================
+    // SVG Floor Plan
+    // ============================================================
+    const NS = 'http://www.w3.org/2000/svg';
 
-function svgEl(tag, attrs) {
-  const e = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
-  return e;
-}
+    function svgEl(tag, attrs) {
+      const e = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+      return e;
+    }
 
-function svgTxt(x, y, content, attrs) {
-  const t = svgEl('text', { x, y, 'text-anchor':'middle', 'dominant-baseline':'middle', ...attrs });
-  t.textContent = content;
-  return t;
-}
+    function svgTxt(x, y, content, attrs) {
+      const t = svgEl('text', { x, y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', ...attrs });
+      t.textContent = content;
+      return t;
+    }
 
-function renderFP() {
-  const svg = document.getElementById('fpSvg');
-  svg.innerHTML = '';
+    function renderFP() {
+      const svg = document.getElementById('fpSvg');
+      svg.innerHTML = '';
 
-  // Background
-  svg.appendChild(svgEl('rect', {x:0,y:0,width:320,height:380,fill:'#e8e4d8',rx:4}));
+      // Background
+      svg.appendChild(svgEl('rect', { x: 0, y: 0, width: 320, height: 380, fill: '#e8e4d8', rx: 4 }));
 
-  const cells = gridData.cells;
+      const cells = gridData.cells;
 
-  // Draw cells by cleanliness color (no individual borders)
-  for (let row = 0; row < GRID_ROWS; row++) {
-    for (let col = 0; col < GRID_COLS; col++) {
-      const rid = cells[row]?.[col];
-      if (!rid) continue;
-      const room = getRoom(rid);
-      const colorIdx = scoreToColorIdx(room ? calcRoomScore(room) : null);
+      // Draw cells by cleanliness color (no individual borders)
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          const rid = cells[row]?.[col];
+          if (!rid) continue;
+          const room = getRoom(rid);
+          const score01 = room ? calcRoomScore(room) : null;
+          svg.appendChild(svgEl('rect', {
+            x: col * CELL_W, y: row * CELL_H, width: CELL_W, height: CELL_H,
+            fill: scoreToColor(score01, 0.72), stroke: 'none'
+          }));
+        }
+      }
+
+      // Draw room boundary lines only (where adjacent cells differ)
+      const bdColor = '#1c1a14', bdW = 1.5;
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          const cur = cells[row]?.[col] ?? null;
+          const right = cells[row]?.[col + 1] ?? null;
+          const bottom = cells[row + 1]?.[col] ?? null;
+          // Right boundary
+          if (col < GRID_COLS - 1 && cur !== right) {
+            const x = (col + 1) * CELL_W, y1 = row * CELL_H, y2 = (row + 1) * CELL_H;
+            const ln = svgEl('line', { x1: x, y1, x2: x, y2, stroke: bdColor, 'stroke-width': bdW });
+            svg.appendChild(ln);
+          }
+          // Bottom boundary
+          if (row < GRID_ROWS - 1 && cur !== bottom) {
+            const y = (row + 1) * CELL_H, x1 = col * CELL_W, x2 = (col + 1) * CELL_W;
+            const ln = svgEl('line', { x1, y1: y, x2, y2: y, stroke: bdColor, 'stroke-width': bdW });
+            svg.appendChild(ln);
+          }
+        }
+      }
+
+      // Draw labels + click targets per room
+      for (const gr of gridData.rooms) {
+        const rid = gr.id;
+        const room = getRoom(rid);
+
+        // Compute centroid and bounding box
+        let sumX = 0, sumY = 0, cnt = 0, maxCX = -Infinity, minRY = Infinity, maxCY = -Infinity;
+        for (let row = 0; row < GRID_ROWS; row++) {
+          for (let col = 0; col < GRID_COLS; col++) {
+            if (cells[row]?.[col] !== rid) continue;
+            sumX += col * CELL_W + CELL_W / 2;
+            sumY += row * CELL_H + CELL_H / 2;
+            maxCX = Math.max(maxCX, (col + 1) * CELL_W);
+            minRY = Math.min(minRY, row * CELL_H);
+            maxCY = Math.max(maxCY, (row + 1) * CELL_H);
+            cnt++;
+          }
+        }
+        if (cnt === 0) continue;
+
+        const cx = sumX / cnt, cy = sumY / cnt;
+        const approxW = Math.sqrt(cnt) * CELL_W;
+        const fs = approxW < 60 ? 8 : approxW < 100 ? 9 : 11;
+
+        const g = document.createElementNS(NS, 'g');
+        g.style.cursor = 'pointer';
+        g.addEventListener('click', () => openSheet(rid));
+
+        // Transparent click cells
+        for (let row = 0; row < GRID_ROWS; row++) {
+          for (let col = 0; col < GRID_COLS; col++) {
+            if (cells[row]?.[col] !== rid) continue;
+            g.appendChild(svgEl('rect', {
+              x: col * CELL_W, y: row * CELL_H, width: CELL_W, height: CELL_H, fill: 'transparent'
+            }));
+          }
+        }
+
+        // Name label
+        g.appendChild(svgTxt(cx, cy - 7, room?.name || rid, {
+          'font-family': "'Noto Sans JP', sans-serif",
+          'font-size': fs, 'font-weight': 500, fill: '#1c1a14', 'pointer-events': 'none'
+        }));
+
+        // Score label
+        const s01 = room ? calcRoomScore(room) : null;
+        g.appendChild(svgTxt(cx, cy + 7, s01 === null ? '—' : `${Math.round(s01 * 100)}%`, {
+          'font-family': "'DM Mono', monospace",
+          'font-size': 8, fill: 'rgba(28,26,20,0.5)', 'pointer-events': 'none'
+        }));
+
+        // Task badge
+        if (room) {
+          const rem = [...room.tasks, ...(room.subplaces || []).flatMap(s => s.tasks)]
+            .filter(t => t.status !== '済').length;
+          if (rem > 0) {
+            const bx = maxCX - 11, by = minRY + 11;
+            g.appendChild(svgEl('circle', { cx: bx, cy: by, r: 8.5, fill: '#1c1a14' }));
+            g.appendChild(svgTxt(bx, by + 0.5, rem > 9 ? '9+' : rem, {
+              'font-family': "'DM Mono', monospace", 'font-size': 7, fill: 'white', 'pointer-events': 'none'
+            }));
+          }
+        }
+
+        svg.appendChild(g);
+      }
+
+      // Outer wall
       svg.appendChild(svgEl('rect', {
-        x: col*CELL_W, y: row*CELL_H, width:CELL_W, height:CELL_H,
-        fill: COLORS_A[colorIdx], stroke:'none'
+        x: 1.5, y: 1.5, width: 317, height: 377,
+        fill: 'none', stroke: '#1c1a14', 'stroke-width': 3, rx: 3
       }));
     }
-  }
 
-  // Draw room boundary lines only (where adjacent cells differ)
-  const bdColor = '#1c1a14', bdW = 1.5;
-  for (let row = 0; row < GRID_ROWS; row++) {
-    for (let col = 0; col < GRID_COLS; col++) {
-      const cur = cells[row]?.[col] ?? null;
-      const right  = cells[row]?.[col+1] ?? null;
-      const bottom = cells[row+1]?.[col] ?? null;
-      // Right boundary
-      if (col < GRID_COLS-1 && cur !== right) {
-        const x = (col+1)*CELL_W, y1 = row*CELL_H, y2 = (row+1)*CELL_H;
-        const ln = svgEl('line', {x1:x,y1,x2:x,y2,stroke:bdColor,'stroke-width':bdW});
-        svg.appendChild(ln);
+    // ============================================================
+    // Overall Bar
+    // ============================================================
+    function renderOverall() {
+      let weightedSum = 0, totalWeight = 0;
+      for (const gr of gridData.rooms) {
+        const room = getRoom(gr.id);
+        const score = room ? calcRoomScore(room) : null;
+        if (score !== null) {
+          weightedSum += score * gr.weight;
+          totalWeight += gr.weight;
+        }
       }
-      // Bottom boundary
-      if (row < GRID_ROWS-1 && cur !== bottom) {
-        const y = (row+1)*CELL_H, x1 = col*CELL_W, x2 = (col+1)*CELL_W;
-        const ln = svgEl('line', {x1,y1:y,x2,y2:y,stroke:bdColor,'stroke-width':bdW});
-        svg.appendChild(ln);
-      }
-    }
-  }
-
-  // Draw labels + click targets per room
-  for (const gr of gridData.rooms) {
-    const rid = gr.id;
-    const room = getRoom(rid);
-
-    // Compute centroid and bounding box
-    let sumX=0, sumY=0, cnt=0, maxCX=-Infinity, minRY=Infinity, maxCY=-Infinity;
-    for (let row=0; row<GRID_ROWS; row++) {
-      for (let col=0; col<GRID_COLS; col++) {
-        if (cells[row]?.[col] !== rid) continue;
-        sumX += col*CELL_W + CELL_W/2;
-        sumY += row*CELL_H + CELL_H/2;
-        maxCX = Math.max(maxCX, (col+1)*CELL_W);
-        minRY = Math.min(minRY, row*CELL_H);
-        maxCY = Math.max(maxCY, (row+1)*CELL_H);
-        cnt++;
-      }
-    }
-    if (cnt === 0) continue;
-
-    const cx = sumX/cnt, cy = sumY/cnt;
-    const approxW = Math.sqrt(cnt) * CELL_W;
-    const fs = approxW < 60 ? 8 : approxW < 100 ? 9 : 11;
-
-    const g = document.createElementNS(NS, 'g');
-    g.style.cursor = 'pointer';
-    g.addEventListener('click', () => openSheet(rid));
-
-    // Transparent click cells
-    for (let row=0; row<GRID_ROWS; row++) {
-      for (let col=0; col<GRID_COLS; col++) {
-        if (cells[row]?.[col] !== rid) continue;
-        g.appendChild(svgEl('rect', {
-          x:col*CELL_W, y:row*CELL_H, width:CELL_W, height:CELL_H, fill:'transparent'
-        }));
-      }
+      const avg = totalWeight > 0 ? weightedSum / totalWeight : null;
+      const pct = avg === null ? 0 : Math.round(avg * 100);
+      const color = scoreToColor(avg);
+      document.getElementById('overallNum').textContent = `完了度 ${avg === null ? '—' : pct + '%'}`;
+      const fill = document.getElementById('barFill');
+      fill.style.width = `${pct}%`;
+      fill.style.backgroundColor = color;
     }
 
-    // Name label
-    g.appendChild(svgTxt(cx, cy-7, room?.name || rid, {
-      'font-family':"'Noto Sans JP', sans-serif",
-      'font-size':fs, 'font-weight':500, fill:'#1c1a14', 'pointer-events':'none'
-    }));
+    // ============================================================
+    // Bottom Sheet
+    // ============================================================
+    function openSheet(id) {
+      activeId = id;
+      activeSubId = null;
+      const room = getRoom(id);
 
-    // Score label
-    const s01 = room ? calcRoomScore(room) : null;
-    g.appendChild(svgTxt(cx, cy+7, s01===null?'—':`${Math.round(s01*100)}%`, {
-      'font-family':"'DM Mono', monospace",
-      'font-size':8, fill:'rgba(28,26,20,0.5)', 'pointer-events':'none'
-    }));
+      document.getElementById('shName').textContent = room.name;
 
-    // Task badge
-    if (room) {
-      const rem = [...room.tasks,...(room.subplaces||[]).flatMap(s=>s.tasks)]
-        .filter(t=>t.status!=='済').length;
-      if (rem > 0) {
-        const bx = maxCX-11, by = minRY+11;
-        g.appendChild(svgEl('circle', {cx:bx,cy:by,r:8.5,fill:'#1c1a14'}));
-        g.appendChild(svgTxt(bx, by+0.5, rem>9?'9+':rem, {
-          'font-family':"'DM Mono', monospace",'font-size':7,fill:'white','pointer-events':'none'
-        }));
+      renderTabs();
+      renderSheetBody();
+
+      document.getElementById('sheet').classList.add('open');
+      document.getElementById('overlay').classList.add('on');
+    }
+
+    function closeSheet() {
+      if (activeId) {
+        const ctx = getActiveCtx();
+        if (ctx) ctx.notes = document.getElementById('notesArea').value;
+        save();
+        renderFP();
+        renderOverall();
       }
+      hideSubdivPrompt();
+      document.getElementById('sheet').classList.remove('open');
+      document.getElementById('overlay').classList.remove('on');
+      activeId = null;
+      activeSubId = null;
     }
 
-    svg.appendChild(g);
-  }
+    // ============================================================
+    // Score Calculation (auto from tasks + checks)
+    // ============================================================
+    function calcCtxScore(ctx) {
+      const tasks = ctx.tasks || [];
+      const checks = Object.values(ctx.checks || {});
 
-  // Outer wall
-  svg.appendChild(svgEl('rect', {
-    x:1.5,y:1.5,width:317,height:377,
-    fill:'none',stroke:'#1c1a14','stroke-width':3,rx:3
-  }));
-}
+      const taskScore = tasks.length > 0
+        ? tasks.reduce((s, t) => s + (t.status === '済' ? 1 : t.status === '着手中' ? 0.5 : 0), 0) / tasks.length
+        : null;
 
-// ============================================================
-// Overall Bar
-// ============================================================
-function renderOverall() {
-  let weightedSum = 0, totalWeight = 0;
-  for (const gr of gridData.rooms) {
-    const room = getRoom(gr.id);
-    const score = room ? calcRoomScore(room) : null;
-    if (score !== null) {
-      weightedSum += score * gr.weight;
-      totalWeight += gr.weight;
+      const checkScore = checks.length > 0
+        ? checks.filter(Boolean).length / checks.length
+        : null;
+
+      if (taskScore === null && checkScore === null) return null;
+      if (taskScore === null) return checkScore;
+      if (checkScore === null) return taskScore;
+      return taskScore * 0.7 + checkScore * 0.3;
     }
-  }
-  const avg = totalWeight > 0 ? weightedSum / totalWeight : null;
-  const pct = avg === null ? 0 : Math.round(avg * 100);
-  const color = COLORS[scoreToColorIdx(avg)];
-  document.getElementById('overallNum').textContent = `完了度 ${avg === null ? '—' : pct + '%'}`;
-  const fill = document.getElementById('barFill');
-  fill.style.width = `${pct}%`;
-  fill.style.backgroundColor = color;
-}
 
-// ============================================================
-// Bottom Sheet
-// ============================================================
-function openSheet(id) {
-  activeId = id;
-  activeSubId = null;
-  const room = getRoom(id);
+    function calcRoomScore(room) {
+      const ctxs = [room, ...(room.subplaces || [])];
+      const scores = ctxs.map(calcCtxScore).filter(s => s !== null);
+      if (scores.length === 0) return null;
+      return scores.reduce((a, b) => a + b, 0) / scores.length;
+    }
 
-  document.getElementById('shName').textContent = room.name;
+    function renderProgress(ctx) {
+      const score = calcCtxScore(ctx);
+      const pct = score === null ? null : Math.round(score * 100);
+      const color = scoreToColor(score);
 
-  renderTabs();
-  renderSheetBody();
+      document.getElementById('progPct').textContent = pct === null ? '—' : `${pct}%`;
+      document.getElementById('progPct').style.color = pct === null ? 'var(--ink2)' : color;
+      document.getElementById('progFill').style.width = `${pct ?? 0}%`;
+      document.getElementById('progFill').style.backgroundColor = color;
+      document.getElementById('shDot').style.background = pct === null ? 'var(--bd)' : color;
 
-  document.getElementById('sheet').classList.add('open');
-  document.getElementById('overlay').classList.add('on');
-}
+      const tasks = ctx.tasks || [];
+      const checks = Object.values(ctx.checks || {});
+      const done = tasks.filter(t => t.status === '済').length;
+      const wip = tasks.filter(t => t.status === '着手中').length;
+      const chkDone = checks.filter(Boolean).length;
 
-function closeSheet() {
-  if (activeId) {
-    const ctx = getActiveCtx();
-    if (ctx) ctx.notes = document.getElementById('notesArea').value;
-    save();
-    renderFP();
-    renderOverall();
-  }
-  hideSubdivPrompt();
-  document.getElementById('sheet').classList.remove('open');
-  document.getElementById('overlay').classList.remove('on');
-  activeId = null;
-  activeSubId = null;
-}
+      // Sub-label: task weight vs check weight contribution
+      document.getElementById('progSub').textContent = pct === null ? 'タスクなし' :
+        `タスク${tasks.length > 0 ? Math.round((done + wip * 0.5) / tasks.length * 100) : '—'}% · チェック${Math.round(chkDone / Math.max(checks.length, 1) * 100)}%`;
 
-// ============================================================
-// Score Calculation (auto from tasks + checks)
-// ============================================================
-function calcCtxScore(ctx) {
-  const tasks = ctx.tasks || [];
-  const checks = Object.values(ctx.checks || {});
+      const chips = [];
+      if (tasks.length > 0) chips.push(`タスク ${done}${wip > 0 ? `+${wip}中` : ''}/${tasks.length}完了`);
+      if (checks.length > 0) chips.push(`チェック ${chkDone}/${checks.length}`);
+      document.getElementById('progBreakdown').innerHTML =
+        chips.map(c => `<span class="prog-chip">${c}</span>`).join('');
+    }
 
-  const taskScore = tasks.length > 0
-    ? tasks.reduce((s, t) => s + (t.status === '済' ? 1 : t.status === '着手中' ? 0.5 : 0), 0) / tasks.length
-    : null;
+    // ============================================================
+    // Tasks (unified: todo + log)
+    // ============================================================
+    const ST_ORDER = { '着手中': 0, '未着手': 1, '済': 2 };
+    const ST_LABELS = { '未着手': '未', '着手中': '中', '済': '済' };
 
-  const checkScore = checks.length > 0
-    ? checks.filter(Boolean).length / checks.length
-    : null;
-
-  if (taskScore === null && checkScore === null) return null;
-  if (taskScore === null) return checkScore;
-  if (checkScore === null) return taskScore;
-  return taskScore * 0.7 + checkScore * 0.3;
-}
-
-function calcRoomScore(room) {
-  const ctxs = [room, ...(room.subplaces || [])];
-  const scores = ctxs.map(calcCtxScore).filter(s => s !== null);
-  if (scores.length === 0) return null;
-  return scores.reduce((a, b) => a + b, 0) / scores.length;
-}
-
-function scoreToColorIdx(s) {
-  if (s === null) return 3;
-  return Math.max(1, Math.min(5, Math.round(s * 4) + 1));
-}
-
-function renderProgress(ctx) {
-  const score = calcCtxScore(ctx);
-  const pct   = score === null ? null : Math.round(score * 100);
-  const color  = COLORS[scoreToColorIdx(score)];
-
-  document.getElementById('progPct').textContent  = pct === null ? '—' : `${pct}%`;
-  document.getElementById('progPct').style.color   = pct === null ? 'var(--ink2)' : color;
-  document.getElementById('progFill').style.width  = `${pct ?? 0}%`;
-  document.getElementById('progFill').style.backgroundColor = color;
-  document.getElementById('shDot').style.background = pct === null ? 'var(--bd)' : color;
-
-  const tasks  = ctx.tasks || [];
-  const checks = Object.values(ctx.checks || {});
-  const done   = tasks.filter(t => t.status === '済').length;
-  const wip    = tasks.filter(t => t.status === '着手中').length;
-  const chkDone = checks.filter(Boolean).length;
-
-  // Sub-label: task weight vs check weight contribution
-  document.getElementById('progSub').textContent = pct === null ? 'タスクなし' :
-    `タスク${tasks.length > 0 ? Math.round((done + wip * 0.5) / tasks.length * 100) : '—'}% · チェック${Math.round(chkDone / Math.max(checks.length,1) * 100)}%`;
-
-  const chips = [];
-  if (tasks.length > 0) chips.push(`タスク ${done}${wip > 0 ? `+${wip}中` : ''}/${tasks.length}完了`);
-  if (checks.length > 0) chips.push(`チェック ${chkDone}/${checks.length}`);
-  document.getElementById('progBreakdown').innerHTML =
-    chips.map(c => `<span class="prog-chip">${c}</span>`).join('');
-}
-
-// ============================================================
-// Tasks (unified: todo + log)
-// ============================================================
-const ST_ORDER = { '着手中': 0, '未着手': 1, '済': 2 };
-const ST_LABELS = { '未着手': '未', '着手中': '中', '済': '済' };
-
-function renderTasks(ctx) {
-  const c = document.getElementById('taskList');
-  if (!ctx.tasks.length) {
-    c.innerHTML = '<div class="empty-msg">タスクなし</div>';
-    return;
-  }
-  const sorted = [...ctx.tasks].sort((a, b) => ST_ORDER[a.status] - ST_ORDER[b.status]);
-  c.innerHTML = sorted.map(t => {
-    const statBtns = ['未着手','着手中','済'].map(st => `
-      <button class="st-btn ${t.status === st ? 'st-'+st : ''}"
+    function renderTasks(ctx) {
+      const c = document.getElementById('taskList');
+      if (!ctx.tasks.length) {
+        c.innerHTML = '<div class="empty-msg">タスクなし</div>';
+        return;
+      }
+      const sorted = [...ctx.tasks].sort((a, b) => ST_ORDER[a.status] - ST_ORDER[b.status]);
+      c.innerHTML = sorted.map(t => {
+        const statBtns = ['未着手', '着手中', '済'].map(st => `
+      <button class="st-btn ${t.status === st ? 'st-' + st : ''}"
         onclick="setTaskStatus('${t.id}','${st}')">${ST_LABELS[st]}</button>
     `).join('');
-    const dateRow = (t.status === '着手中' || t.status === '済') ? `
+        const dateRow = (t.status === '着手中' || t.status === '済') ? `
       <div class="task-date-row">
         <span class="task-date-lbl">着手日</span>
-        <input type="date" class="task-date-inp" value="${t.date||''}"
+        <input type="date" class="task-date-inp" value="${t.date || ''}"
           onchange="setTaskDate('${t.id}',this.value)">
       </div>` : '';
-    return `
+        return `
       <div class="task-item" data-st="${t.status}" data-tid="${t.id}">
         <div class="st-row">${statBtns}</div>
         <div class="task-mid">
-          <span class="task-text ${t.status==='済'?'done':''}">${esc(t.text)}</span>
+          <span class="task-text ${t.status === '済' ? 'done' : ''}">${esc(t.text)}</span>
           ${dateRow}
         </div>
         <button class="del-btn" onclick="delTask('${t.id}')">×</button>
       </div>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-function esc(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+    function esc(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
 
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
+    function todayStr() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
 
-let lastAddedTaskText = '';
+    let lastAddedTaskText = '';
 
-function addTask() {
-  const inp = document.getElementById('taskInp');
-  const text = inp.value.trim();
-  if (!text || !activeId) return;
-  getActiveCtx().tasks.push({ id: `t_${Date.now()}${Math.random()}`, text, status: '未着手', date: '' });
-  lastAddedTaskText = text;
-  inp.value = '';
-  save();
-  const ctx = getActiveCtx();
-  renderTasks(ctx);
-  renderProgress(ctx);
-  renderFP();
-  renderOverall();
-  showSubdivPrompt(text);
-}
+    function addTask() {
+      const inp = document.getElementById('taskInp');
+      const text = inp.value.trim();
+      if (!text || !activeId) return;
+      getActiveCtx().tasks.push({ id: `t_${Date.now()}${Math.random()}`, text, status: '未着手', date: '' });
+      lastAddedTaskText = text;
+      inp.value = '';
+      save();
+      const ctx = getActiveCtx();
+      renderTasks(ctx);
+      renderProgress(ctx);
+      renderFP();
+      renderOverall();
+      showSubdivPrompt(text);
+    }
 
-function showSubdivPrompt(parentText) {
-  document.getElementById('subdivParent').textContent = parentText;
-  document.getElementById('subdivInp').value = '';
-  document.getElementById('subdivPrompt').classList.add('show');
-}
+    function showSubdivPrompt(parentText) {
+      document.getElementById('subdivParent').textContent = parentText;
+      document.getElementById('subdivInp').value = '';
+      document.getElementById('subdivPrompt').classList.add('show');
+    }
 
-function hideSubdivPrompt() {
-  document.getElementById('subdivPrompt').classList.remove('show');
-  document.getElementById('subdivInp').value = '';
-}
+    function hideSubdivPrompt() {
+      document.getElementById('subdivPrompt').classList.remove('show');
+      document.getElementById('subdivInp').value = '';
+    }
 
-function addSubdivTask() {
-  const inp = document.getElementById('subdivInp');
-  const text = inp.value.trim();
-  if (!text || !activeId) return;
-  getActiveCtx().tasks.push({ id: `t_${Date.now()}${Math.random()}`, text, status: '未着手', date: '' });
-  inp.value = '';
-  save();
-  const ctx = getActiveCtx();
-  renderTasks(ctx);
-  renderProgress(ctx);
-  renderFP();
-  renderOverall();
-  // Keep prompt open for more sub-tasks, refocus
-  setTimeout(() => inp.focus(), 50);
-}
+    function addSubdivTask() {
+      const inp = document.getElementById('subdivInp');
+      const text = inp.value.trim();
+      if (!text || !activeId) return;
+      getActiveCtx().tasks.push({ id: `t_${Date.now()}${Math.random()}`, text, status: '未着手', date: '' });
+      inp.value = '';
+      save();
+      const ctx = getActiveCtx();
+      renderTasks(ctx);
+      renderProgress(ctx);
+      renderFP();
+      renderOverall();
+      // Keep prompt open for more sub-tasks, refocus
+      setTimeout(() => inp.focus(), 50);
+    }
 
-document.getElementById('subdivOkBtn').addEventListener('click', addSubdivTask);
-document.getElementById('subdivCloseBtn').addEventListener('click', hideSubdivPrompt);
-document.getElementById('subdivInp').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); addSubdivTask(); }
-  if (e.key === 'Escape') hideSubdivPrompt();
-});
+    document.getElementById('subdivOkBtn').addEventListener('click', addSubdivTask);
+    document.getElementById('subdivCloseBtn').addEventListener('click', hideSubdivPrompt);
+    document.getElementById('subdivInp').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addSubdivTask(); }
+      if (e.key === 'Escape') hideSubdivPrompt();
+    });
 
-let toastTimer = null;
-function showToast(msg, isMilestone = false) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast' + (isMilestone ? ' milestone' : '');
-  // force reflow to restart transition
-  void el.offsetWidth;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), isMilestone ? 2800 : 1800);
-}
+    let toastTimer = null;
+    function showToast(msg, isMilestone = false) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast' + (isMilestone ? ' milestone' : '');
+      // force reflow to restart transition
+      void el.offsetWidth;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), isMilestone ? 2800 : 1800);
+    }
 
-const DONE_MSGS = ['✓ 完了！'];
+    const DONE_MSGS = ['✓ 完了！'];
 
-// Milestones: [threshold%, emoji, message]
-const MILESTONES = [
-  [25,  '🌱', 'スタート！25%達成'],
-  [50,  '🔥', '折り返し！50%完了'],
-  [75,  '⚡', 'もう少し！75%達成'],
-  [100, '🎉', '完璧！100%達成！'],
-];
+    // Milestones: [threshold%, emoji, message]
+    const MILESTONES = [
+      [25, '🌱', 'スタート！25%達成'],
+      [50, '🔥', '折り返し！50%完了'],
+      [75, '⚡', 'もう少し！75%達成'],
+      [100, '🎉', '完璧！100%達成！'],
+    ];
 
-function getPct(score) {
-  return score === null ? null : Math.round(score * 100);
-}
+    function getPct(score) {
+      return score === null ? null : Math.round(score * 100);
+    }
 
-function checkMilestone(prevScore, nextScore, label) {
-  const prev = getPct(prevScore);
-  const next = getPct(nextScore);
-  if (prev === null || next === null) return;
-  for (const [threshold, emoji, msg] of MILESTONES) {
-    if (prev < threshold && next >= threshold) {
+    function checkMilestone(prevScore, nextScore, label) {
+      const prev = getPct(prevScore);
+      const next = getPct(nextScore);
+      if (prev === null || next === null) return;
+      for (const [threshold, emoji, msg] of MILESTONES) {
+        if (prev < threshold && next >= threshold) {
+          setTimeout(() => {
+            showToast(`${emoji} ${label}が${msg}`, true);
+            // flash progress bar in sheet if open
+            const pw = document.querySelector('.prog-wrap');
+            if (pw) { pw.classList.remove('flash'); void pw.offsetWidth; pw.classList.add('flash'); }
+          }, 400);
+          break;
+        }
+      }
+    }
+
+    function setTaskStatus(tid, status) {
+      if (!activeId) return;
+      const ctx = getActiveCtx();
+      const t = ctx.tasks.find(x => x.id === tid);
+      if (!t) return;
+      const prev = t.status;
+
+      // Capture scores before change
+      const room = getRoom(activeId);
+      const prevRoomScore = calcRoomScore(room);
+      const prevCtxScore = calcCtxScore(ctx);
+
+      t.status = status;
+      if (status === '着手中' && !t.date) t.date = todayStr();
+      save();
+      renderTasks(ctx);
+      renderProgress(ctx);
+      renderFP();
+      renderOverall();
+
+      if (status === '済' && prev !== '済') {
+        showToast(DONE_MSGS[0]);
+        const el = document.querySelector(`[data-tid="${tid}"]`);
+        if (el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+
+        // Check ctx milestone (subplace or room-level)
+        const ctxLabel = activeSubId
+          ? (room.subplaces.find(s => s.id === activeSubId)?.name || 'エリア')
+          : room.name;
+        checkMilestone(prevCtxScore, calcCtxScore(ctx), ctxLabel);
+
+        // Check room milestone if we're in a subplace (room is the parent)
+        if (activeSubId) {
+          checkMilestone(prevRoomScore, calcRoomScore(room), room.name);
+        }
+      }
+    }
+
+    function setTaskDate(tid, date) {
+      if (!activeId) return;
+      const ctx = getActiveCtx();
+      const t = ctx.tasks.find(x => x.id === tid);
+      if (t) { t.date = date; save(); }
+    }
+
+    function delTask(tid) {
+      if (!activeId) return;
+      const ctx = getActiveCtx();
+      ctx.tasks = ctx.tasks.filter(x => x.id !== tid);
+      save();
+      renderTasks(ctx);
+      renderProgress(ctx);
+      renderFP();
+      renderOverall();
+    }
+
+    // ============================================================
+    // Rename
+    // ============================================================
+    function openRename() {
+      if (!activeId) return;
+      document.getElementById('renameInp').value = getRoom(activeId).name;
+      document.getElementById('renameModal').classList.add('on');
+      setTimeout(() => document.getElementById('renameInp').focus(), 100);
+    }
+
+    function closeRename() {
+      document.getElementById('renameModal').classList.remove('on');
+    }
+
+    function doRename() {
+      const name = document.getElementById('renameInp').value.trim();
+      if (!name || !activeId) { closeRename(); return; }
+      getRoom(activeId).name = name;
+      document.getElementById('shName').textContent = name;
+      save();
+      renderFP();
+      closeRename();
+    }
+
+    // ============================================================
+    // Event Listeners
+    // ============================================================
+    document.getElementById('overlay').addEventListener('click', closeSheet);
+    document.getElementById('closeBtn').addEventListener('click', closeSheet);
+    document.getElementById('renameBtn').addEventListener('click', openRename);
+    document.getElementById('renameCancelBtn').addEventListener('click', closeRename);
+    document.getElementById('renameOkBtn').addEventListener('click', doRename);
+    document.getElementById('renameInp').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doRename();
+      if (e.key === 'Escape') closeRename();
+    });
+
+    document.getElementById('notesArea').addEventListener('input', () => {
+      if (activeId) {
+        getActiveCtx().notes = document.getElementById('notesArea').value;
+        save();
+      }
+    });
+
+    document.getElementById('addTaskBtn').addEventListener('click', addTask);
+    document.getElementById('taskInp').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addTask(); }
+    });
+
+    // iOS: scroll input into view after keyboard appears
+    document.getElementById('sheet').addEventListener('focusin', e => {
+      const el = e.target;
+      if (!['INPUT', 'TEXTAREA'].includes(el.tagName)) return;
       setTimeout(() => {
-        showToast(`${emoji} ${label}が${msg}`, true);
-        // flash progress bar in sheet if open
-        const pw = document.querySelector('.prog-wrap');
-        if (pw) { pw.classList.remove('flash'); void pw.offsetWidth; pw.classList.add('flash'); }
-      }, 400);
-      break;
-    }
-  }
-}
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+    });
 
-function setTaskStatus(tid, status) {
-  if (!activeId) return;
-  const ctx = getActiveCtx();
-  const t = ctx.tasks.find(x => x.id === tid);
-  if (!t) return;
-  const prev = t.status;
+    document.getElementById('subCancelBtn').addEventListener('click', closeSubModal);
+    document.getElementById('subOkBtn').addEventListener('click', doSubModal);
+    document.getElementById('subInp').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSubModal();
+      if (e.key === 'Escape') closeSubModal();
+    });
+    document.getElementById('subRenameBtn').addEventListener('click', openSubRename);
+    document.getElementById('subDelBtn').addEventListener('click', delSubplace);
 
-  // Capture scores before change
-  const room = getRoom(activeId);
-  const prevRoomScore = calcRoomScore(room);
-  const prevCtxScore  = calcCtxScore(ctx);
+    // ============================================================
+    // Daily Pickup
+    // ============================================================
+    function renderPickup() {
+      const dismissed = localStorage.getItem('pickup_dismissed') === todayStr();
+      const bar = document.getElementById('pickupBar');
+      if (dismissed) { bar.classList.add('collapsed'); return; }
 
-  t.status = status;
-  if (status === '着手中' && !t.date) t.date = todayStr();
-  save();
-  renderTasks(ctx);
-  renderProgress(ctx);
-  renderFP();
-  renderOverall();
+      const candidates = gridData.rooms
+        .map(gr => {
+          const room = getRoom(gr.id);
+          if (!room) return null;
+          const allTasks = [...room.tasks, ...(room.subplaces || []).flatMap(s => s.tasks)];
+          if (allTasks.length === 0) return null;
+          const score = calcRoomScore(room);
+          return { gr, room, score: score ?? 0 };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 2);
 
-  if (status === '済' && prev !== '済') {
-    showToast(DONE_MSGS[0]);
-    const el = document.querySelector(`[data-tid="${tid}"]`);
-    if (el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
-
-    // Check ctx milestone (subplace or room-level)
-    const ctxLabel = activeSubId
-      ? (room.subplaces.find(s => s.id === activeSubId)?.name || 'エリア')
-      : room.name;
-    checkMilestone(prevCtxScore, calcCtxScore(ctx), ctxLabel);
-
-    // Check room milestone if we're in a subplace (room is the parent)
-    if (activeSubId) {
-      checkMilestone(prevRoomScore, calcRoomScore(room), room.name);
-    }
-  }
-}
-
-function setTaskDate(tid, date) {
-  if (!activeId) return;
-  const ctx = getActiveCtx();
-  const t = ctx.tasks.find(x => x.id === tid);
-  if (t) { t.date = date; save(); }
-}
-
-function delTask(tid) {
-  if (!activeId) return;
-  const ctx = getActiveCtx();
-  ctx.tasks = ctx.tasks.filter(x => x.id !== tid);
-  save();
-  renderTasks(ctx);
-  renderProgress(ctx);
-  renderFP();
-  renderOverall();
-}
-
-// ============================================================
-// Rename
-// ============================================================
-function openRename() {
-  if (!activeId) return;
-  document.getElementById('renameInp').value = getRoom(activeId).name;
-  document.getElementById('renameModal').classList.add('on');
-  setTimeout(() => document.getElementById('renameInp').focus(), 100);
-}
-
-function closeRename() {
-  document.getElementById('renameModal').classList.remove('on');
-}
-
-function doRename() {
-  const name = document.getElementById('renameInp').value.trim();
-  if (!name || !activeId) { closeRename(); return; }
-  getRoom(activeId).name = name;
-  document.getElementById('shName').textContent = name;
-  save();
-  renderFP();
-  closeRename();
-}
-
-// ============================================================
-// Event Listeners
-// ============================================================
-document.getElementById('overlay').addEventListener('click', closeSheet);
-document.getElementById('closeBtn').addEventListener('click', closeSheet);
-document.getElementById('renameBtn').addEventListener('click', openRename);
-document.getElementById('renameCancelBtn').addEventListener('click', closeRename);
-document.getElementById('renameOkBtn').addEventListener('click', doRename);
-document.getElementById('renameInp').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doRename();
-  if (e.key === 'Escape') closeRename();
-});
-
-document.getElementById('notesArea').addEventListener('input', () => {
-  if (activeId) {
-    getActiveCtx().notes = document.getElementById('notesArea').value;
-    save();
-  }
-});
-
-document.getElementById('addTaskBtn').addEventListener('click', addTask);
-document.getElementById('taskInp').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); addTask(); }
-});
-
-// iOS: scroll input into view after keyboard appears
-document.getElementById('sheet').addEventListener('focusin', e => {
-  const el = e.target;
-  if (!['INPUT','TEXTAREA'].includes(el.tagName)) return;
-  setTimeout(() => {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 350);
-});
-
-document.getElementById('subCancelBtn').addEventListener('click', closeSubModal);
-document.getElementById('subOkBtn').addEventListener('click', doSubModal);
-document.getElementById('subInp').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doSubModal();
-  if (e.key === 'Escape') closeSubModal();
-});
-document.getElementById('subRenameBtn').addEventListener('click', openSubRename);
-document.getElementById('subDelBtn').addEventListener('click', delSubplace);
-
-// ============================================================
-// Daily Pickup
-// ============================================================
-function renderPickup() {
-  const dismissed = localStorage.getItem('pickup_dismissed') === todayStr();
-  const bar = document.getElementById('pickupBar');
-  if (dismissed) { bar.classList.add('collapsed'); return; }
-
-  const candidates = gridData.rooms
-    .map(gr => {
-      const room = getRoom(gr.id);
-      if (!room) return null;
-      const allTasks = [...room.tasks, ...(room.subplaces||[]).flatMap(s=>s.tasks)];
-      if (allTasks.length === 0) return null;
-      const score = calcRoomScore(room);
-      return { gr, room, score: score ?? 0 };
-    })
-    .filter(Boolean)
-    .sort((a,b) => a.score - b.score)
-    .slice(0, 2);
-
-  const container = document.getElementById('pickupRooms');
-  if (!candidates.length) {
-    container.innerHTML = '<span class="pickup-empty">タスクが登録されている部屋がありません</span>';
-    return;
-  }
-  container.innerHTML = candidates.map(({ gr, room, score }) => {
-    const pct = score === null ? '—' : `${Math.round(score * 100)}%`;
-    return `<div class="pickup-chip" onclick="openSheet('${gr.id}')">
+      const container = document.getElementById('pickupRooms');
+      if (!candidates.length) {
+        container.innerHTML = '<span class="pickup-empty">タスクが登録されている部屋がありません</span>';
+        return;
+      }
+      container.innerHTML = candidates.map(({ gr, room, score }) => {
+        const pct = score === null ? '—' : `${Math.round(score * 100)}%`;
+        return `<div class="pickup-chip" onclick="openSheet('${gr.id}')">
       ${esc(room.name)}
       <span class="pickup-chip-pct">${pct}</span>
     </div>`;
-  }).join('');
-  bar.classList.remove('collapsed');
-}
+      }).join('');
+      bar.classList.remove('collapsed');
+    }
 
-document.getElementById('pickupDismiss').addEventListener('click', () => {
-  localStorage.setItem('pickup_dismissed', todayStr());
-  document.getElementById('pickupBar').classList.add('collapsed');
-});
+    document.getElementById('pickupDismiss').addEventListener('click', () => {
+      localStorage.setItem('pickup_dismissed', todayStr());
+      document.getElementById('pickupBar').classList.add('collapsed');
+    });
 
-// ============================================================
-// Timer
-// ============================================================
-const TIMER_SEC   = 5 * 60;
-const CIRCUMFERENCE = 2 * Math.PI * 90; // r=90 → ~565.5
-const MESSAGES = [
-  [240, '集中しよう 💪'],
-  [180, 'いい感じ！'],
-  [120, 'もう少し！'],
-  [ 60, 'ラスト1分！🔥'],
-  [  0, 'あともう少し…'],
-];
+    // ============================================================
+    // Timer
+    // ============================================================
+    const TIMER_SEC = 5 * 60;
+    const CIRCUMFERENCE = 2 * Math.PI * 90; // r=90 → ~565.5
+    const MESSAGES = [
+      [240, '集中しよう 💪'],
+      [180, 'いい感じ！'],
+      [120, 'もう少し！'],
+      [60, 'ラスト1分！🔥'],
+      [0, 'あともう少し…'],
+    ];
 
-let timerInterval = null;
-let timerRemaining = TIMER_SEC;
-let timerRoomId = null;
+    let timerInterval = null;
+    let timerRemaining = TIMER_SEC;
+    let timerRoomId = null;
 
-document.getElementById('timerStartBtn').addEventListener('click', () => {
-  // Pick the first pickup room, or first room with tasks
-  const dismissed = document.getElementById('pickupBar').classList.contains('collapsed');
-  const chips = document.querySelectorAll('.pickup-chip');
-  if (chips.length > 0) {
-    const firstChip = chips[0];
-    const onclick = firstChip.getAttribute('onclick');
-    const match = onclick.match(/'([^']+)'/);
-    timerRoomId = match ? match[1] : null;
-  } else {
-    timerRoomId = null;
-  }
-  startTimer();
-});
+    document.getElementById('timerStartBtn').addEventListener('click', () => {
+      // Pick the first pickup room, or first room with tasks
+      const dismissed = document.getElementById('pickupBar').classList.contains('collapsed');
+      const chips = document.querySelectorAll('.pickup-chip');
+      if (chips.length > 0) {
+        const firstChip = chips[0];
+        const onclick = firstChip.getAttribute('onclick');
+        const match = onclick.match(/'([^']+)'/);
+        timerRoomId = match ? match[1] : null;
+      } else {
+        timerRoomId = null;
+      }
+      startTimer();
+    });
 
-function startTimer() {
-  timerRemaining = TIMER_SEC;
-  document.getElementById('timerRoomName').textContent =
-    timerRoomId ? (getRoom(timerRoomId)?.name || '') : '';
-  document.getElementById('timerMsg').textContent = '集中しよう 💪';
-  document.getElementById('timerBtns').style.display = 'flex';
-  document.getElementById('timerDigits').style.display = 'flex';
-  updateTimerDisplay();
-  document.getElementById('timerOverlay').classList.add('on');
-
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    timerRemaining--;
-    if (timerRemaining <= 0) {
-      timerRemaining = 0;
+    function startTimer() {
+      timerRemaining = TIMER_SEC;
+      document.getElementById('timerRoomName').textContent =
+        timerRoomId ? (getRoom(timerRoomId)?.name || '') : '';
+      document.getElementById('timerMsg').textContent = '集中しよう 💪';
+      document.getElementById('timerBtns').style.display = 'flex';
+      document.getElementById('timerDigits').style.display = 'flex';
       updateTimerDisplay();
+      document.getElementById('timerOverlay').classList.add('on');
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timerRemaining--;
+        if (timerRemaining <= 0) {
+          timerRemaining = 0;
+          updateTimerDisplay();
+          clearInterval(timerInterval);
+          showTimerDone();
+        } else {
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(timerRemaining / 60);
+      const s = timerRemaining % 60;
+      document.getElementById('timerDigits').textContent =
+        `${m}:${String(s).padStart(2, '0')}`;
+
+      const pct = timerRemaining / TIMER_SEC;
+      const offset = CIRCUMFERENCE * (1 - pct);
+      const ring = document.getElementById('timerRing');
+      ring.style.strokeDasharray = CIRCUMFERENCE;
+      ring.style.strokeDashoffset = offset;
+      // Color shift: white → orange as time runs out
+      ring.style.stroke = pct > 0.33 ? 'white' : pct > 0.15 ? '#f4a04a' : '#e05050';
+
+      for (const [threshold, msg] of MESSAGES) {
+        if (timerRemaining <= threshold + 1) {
+          document.getElementById('timerMsg').textContent = msg;
+          break;
+        }
+      }
+    }
+
+    function showTimerDone() {
+      document.getElementById('timerDigits').style.display = 'none';
+      document.getElementById('timerBtns').style.display = 'none';
+      const msg = document.getElementById('timerMsg');
+      msg.innerHTML = '<div class="celebrate-msg">🎉 お疲れさま！<br>5分やりきった！</div>';
+      // Auto close after 3s
+      setTimeout(closeTimer, 3000);
+    }
+
+    function closeTimer() {
+      clearInterval(timerInterval);
+      document.getElementById('timerOverlay').classList.remove('on');
+    }
+
+    document.getElementById('timerStopBtn').addEventListener('click', closeTimer);
+    document.getElementById('timerDoneBtn').addEventListener('click', () => {
       clearInterval(timerInterval);
       showTimerDone();
-    } else {
-      updateTimerDisplay();
+    });
+
+    // ============================================================
+    // Settings
+    // ============================================================
+    let defaultTasks = {};
+    let activeDtaskRoom = null;
+
+    function loadSettings() {
+      const dt = localStorage.getItem('oheya_dtasks');
+      defaultTasks = dt ? JSON.parse(dt) : {};
+      gridData.rooms.forEach(gr => { if (!defaultTasks[gr.id]) defaultTasks[gr.id] = []; });
+      activeDtaskRoom = gridData.rooms[0]?.id || null;
     }
-  }, 1000);
-}
 
-function updateTimerDisplay() {
-  const m = Math.floor(timerRemaining / 60);
-  const s = timerRemaining % 60;
-  document.getElementById('timerDigits').textContent =
-    `${m}:${String(s).padStart(2,'0')}`;
-
-  const pct = timerRemaining / TIMER_SEC;
-  const offset = CIRCUMFERENCE * (1 - pct);
-  const ring = document.getElementById('timerRing');
-  ring.style.strokeDasharray = CIRCUMFERENCE;
-  ring.style.strokeDashoffset = offset;
-  // Color shift: white → orange as time runs out
-  ring.style.stroke = pct > 0.33 ? 'white' : pct > 0.15 ? '#f4a04a' : '#e05050';
-
-  for (const [threshold, msg] of MESSAGES) {
-    if (timerRemaining <= threshold + 1) {
-      document.getElementById('timerMsg').textContent = msg;
-      break;
+    function saveSettings() {
+      localStorage.setItem('oheya_dtasks', JSON.stringify(defaultTasks));
     }
-  }
-}
 
-function showTimerDone() {
-  document.getElementById('timerDigits').style.display = 'none';
-  document.getElementById('timerBtns').style.display = 'none';
-  const msg = document.getElementById('timerMsg');
-  msg.innerHTML = '<div class="celebrate-msg">🎉 お疲れさま！<br>5分やりきった！</div>';
-  // Auto close after 3s
-  setTimeout(closeTimer, 3000);
-}
+    function openSettings() {
+      renderWeightList();
+      renderDtaskRoomSel();
+      renderDtaskList();
+      document.getElementById('settingsPanel').classList.add('open');
+    }
 
-function closeTimer() {
-  clearInterval(timerInterval);
-  document.getElementById('timerOverlay').classList.remove('on');
-}
+    function closeSettings() {
+      document.getElementById('settingsPanel').classList.remove('open');
+      renderFP();
+      renderOverall();
+    }
 
-document.getElementById('timerStopBtn').addEventListener('click', closeTimer);
-document.getElementById('timerDoneBtn').addEventListener('click', () => {
-  clearInterval(timerInterval);
-  showTimerDone();
-});
+    function recalcWeights() {
+      calcWeightsFromGrid(gridData.cells, gridData.rooms);
+      saveGridData();
+      renderWeightList();
+    }
 
-// ============================================================
-// Settings
-// ============================================================
-let defaultTasks = {};
-let activeDtaskRoom = null;
+    // --- Weights ---
+    function renderWeightList() {
+      const total = gridData.rooms.reduce((s, gr) => s + gr.weight, 0);
+      const totalEl = document.getElementById('weightTotal');
+      totalEl.textContent = total;
+      totalEl.className = 'weight-total-val' + (total !== 100 ? ' over' : '');
 
-function loadSettings() {
-  const dt = localStorage.getItem('oheya_dtasks');
-  defaultTasks = dt ? JSON.parse(dt) : {};
-  gridData.rooms.forEach(gr => { if (!defaultTasks[gr.id]) defaultTasks[gr.id] = []; });
-  activeDtaskRoom = gridData.rooms[0]?.id || null;
-}
-
-function saveSettings() {
-  localStorage.setItem('oheya_dtasks', JSON.stringify(defaultTasks));
-}
-
-function openSettings() {
-  renderWeightList();
-  renderDtaskRoomSel();
-  renderDtaskList();
-  document.getElementById('settingsPanel').classList.add('open');
-}
-
-function closeSettings() {
-  document.getElementById('settingsPanel').classList.remove('open');
-  renderFP();
-  renderOverall();
-}
-
-function recalcWeights() {
-  calcWeightsFromGrid(gridData.cells, gridData.rooms);
-  saveGridData();
-  renderWeightList();
-}
-
-// --- Weights ---
-function renderWeightList() {
-  const total = gridData.rooms.reduce((s, gr) => s + gr.weight, 0);
-  const totalEl = document.getElementById('weightTotal');
-  totalEl.textContent = total;
-  totalEl.className = 'weight-total-val' + (total !== 100 ? ' over' : '');
-
-  document.getElementById('weightList').innerHTML = gridData.rooms.map(gr => {
-    const name = getRoom(gr.id)?.name || gr.id;
-    return `
+      document.getElementById('weightList').innerHTML = gridData.rooms.map(gr => {
+        const name = getRoom(gr.id)?.name || gr.id;
+        return `
       <div class="weight-row">
         <span class="weight-name">${esc(name)}</span>
         <input type="range" class="weight-slider" min="0" max="80" step="1"
@@ -2318,150 +3043,150 @@ function renderWeightList() {
         <input type="number" class="weight-text-inp" min="0" max="100" value="${gr.weight}"
           id="wtxt_${gr.id}" oninput="onWeightChange('${gr.id}', this.value, 'text')">
       </div>`;
-  }).join('');
-}
-
-function onWeightChange(id, val, source) {
-  const num = Math.max(0, Math.min(100, parseInt(val) || 0));
-  const gr = getGridRoom(id);
-  if (gr) gr.weight = num;
-  const row = document.getElementById(`wtxt_${id}`)?.closest('.weight-row');
-  if (row) {
-    if (source === 'text') {
-      const slider = row.querySelector('.weight-slider');
-      if (slider) slider.value = Math.min(80, num);
-    } else {
-      const txt = document.getElementById(`wtxt_${id}`);
-      if (txt) txt.value = num;
+      }).join('');
     }
-  }
-  const total = gridData.rooms.reduce((s, gr) => s + gr.weight, 0);
-  const totalEl = document.getElementById('weightTotal');
-  totalEl.textContent = total;
-  totalEl.className = 'weight-total-val' + (total !== 100 ? ' over' : '');
-  saveGridData();
-}
 
-// --- Default tasks ---
-function renderDtaskRoomSel() {
-  activeDtaskRoom = activeDtaskRoom || gridData.rooms[0]?.id;
-  document.getElementById('defaultTaskRoomSel').innerHTML = gridData.rooms.map(gr => {
-    const name = getRoom(gr.id)?.name || gr.id;
-    const count = (defaultTasks[gr.id] || []).length;
-    return `<button class="room-sel-tab ${gr.id === activeDtaskRoom ? 'active' : ''}"
+    function onWeightChange(id, val, source) {
+      const num = Math.max(0, Math.min(100, parseInt(val) || 0));
+      const gr = getGridRoom(id);
+      if (gr) gr.weight = num;
+      const row = document.getElementById(`wtxt_${id}`)?.closest('.weight-row');
+      if (row) {
+        if (source === 'text') {
+          const slider = row.querySelector('.weight-slider');
+          if (slider) slider.value = Math.min(80, num);
+        } else {
+          const txt = document.getElementById(`wtxt_${id}`);
+          if (txt) txt.value = num;
+        }
+      }
+      const total = gridData.rooms.reduce((s, gr) => s + gr.weight, 0);
+      const totalEl = document.getElementById('weightTotal');
+      totalEl.textContent = total;
+      totalEl.className = 'weight-total-val' + (total !== 100 ? ' over' : '');
+      saveGridData();
+    }
+
+    // --- Default tasks ---
+    function renderDtaskRoomSel() {
+      activeDtaskRoom = activeDtaskRoom || gridData.rooms[0]?.id;
+      document.getElementById('defaultTaskRoomSel').innerHTML = gridData.rooms.map(gr => {
+        const name = getRoom(gr.id)?.name || gr.id;
+        const count = (defaultTasks[gr.id] || []).length;
+        return `<button class="room-sel-tab ${gr.id === activeDtaskRoom ? 'active' : ''}"
       onclick="switchDtaskRoom('${gr.id}')">
       ${esc(name)}${count > 0 ? ` (${count})` : ''}
     </button>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-function switchDtaskRoom(id) {
-  activeDtaskRoom = id;
-  renderDtaskRoomSel();
-  renderDtaskList();
-  document.getElementById('dtaskInp').value = '';
-}
+    function switchDtaskRoom(id) {
+      activeDtaskRoom = id;
+      renderDtaskRoomSel();
+      renderDtaskList();
+      document.getElementById('dtaskInp').value = '';
+    }
 
-function renderDtaskList() {
-  const tasks = defaultTasks[activeDtaskRoom] || [];
-  const c = document.getElementById('dtaskList');
-  if (!tasks.length) {
-    c.innerHTML = '<div class="empty-msg" style="margin-top:8px">デフォルトタスクなし</div>';
-    return;
-  }
-  c.innerHTML = tasks.map((t, i) => `
+    function renderDtaskList() {
+      const tasks = defaultTasks[activeDtaskRoom] || [];
+      const c = document.getElementById('dtaskList');
+      if (!tasks.length) {
+        c.innerHTML = '<div class="empty-msg" style="margin-top:8px">デフォルトタスクなし</div>';
+        return;
+      }
+      c.innerHTML = tasks.map((t, i) => `
     <div class="dtask-item">
       <span class="dtask-txt">${esc(t)}</span>
       <button class="dtask-apply-btn" onclick="applyDtask('${activeDtaskRoom}', ${i})">今すぐ追加</button>
       <button class="del-btn" onclick="delDtask('${activeDtaskRoom}', ${i})">×</button>
     </div>`).join('');
-}
-
-function addDtask() {
-  const inp = document.getElementById('dtaskInp');
-  const text = inp.value.trim();
-  if (!text) return;
-  if (!defaultTasks[activeDtaskRoom]) defaultTasks[activeDtaskRoom] = [];
-  defaultTasks[activeDtaskRoom].push(text);
-  inp.value = '';
-  saveSettings();
-  renderDtaskRoomSel();
-  renderDtaskList();
-}
-
-function delDtask(roomId, idx) {
-  defaultTasks[roomId].splice(idx, 1);
-  saveSettings();
-  renderDtaskRoomSel();
-  renderDtaskList();
-}
-
-function applyDtask(roomId, idx) {
-  const text = defaultTasks[roomId][idx];
-  const room = getRoom(roomId);
-  if (!room) return;
-  const already = room.tasks.find(t => t.text === text);
-  if (already) { alert('すでに同じタスクがあります'); return; }
-  room.tasks.push({ id: `t_${Date.now()}${Math.random()}`, text, status: '未着手', date: '' });
-  save();
-  renderFP();
-  renderOverall();
-  // Flash feedback
-  const btn = event.target;
-  btn.textContent = '追加済✓';
-  btn.style.color = 'var(--c5)';
-  setTimeout(() => { btn.textContent = '今すぐ追加'; btn.style.color = ''; }, 1500);
-}
-
-document.getElementById('settingsBtn').addEventListener('click', openSettings);
-document.getElementById('settingsCloseBtn').addEventListener('click', closeSettings);
-document.getElementById('dtaskAddBtn').addEventListener('click', addDtask);
-document.getElementById('dtaskInp').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); addDtask(); }
-});
-
-// ============================================================
-// All Tasks Panel
-// ============================================================
-const ST_DOT_COLORS = { '未着手': 'var(--bd)', '着手中': 'var(--c2)', '済': 'var(--c5)' };
-let atFilter = '全て';
-
-function openAllTasks() {
-  renderAllTasks();
-  document.getElementById('allTasksPanel').classList.add('open');
-}
-
-function closeAllTasks() {
-  document.getElementById('allTasksPanel').classList.remove('open');
-}
-
-function renderAllTasks() {
-  const items = [];
-  for (const gr of gridData.rooms) {
-    const room = getRoom(gr.id);
-    if (!room) continue;
-    for (const t of room.tasks) items.push({task:t, roomId:gr.id, roomName:room.name, subName:null});
-    for (const sub of (room.subplaces||[])) {
-      for (const t of sub.tasks) items.push({task:t, roomId:gr.id, roomName:room.name, subName:sub.name});
     }
-  }
 
-  const filtered = atFilter === '全て' ? items : items.filter(i => i.task.status === atFilter);
+    function addDtask() {
+      const inp = document.getElementById('dtaskInp');
+      const text = inp.value.trim();
+      if (!text) return;
+      if (!defaultTasks[activeDtaskRoom]) defaultTasks[activeDtaskRoom] = [];
+      defaultTasks[activeDtaskRoom].push(text);
+      inp.value = '';
+      saveSettings();
+      renderDtaskRoomSel();
+      renderDtaskList();
+    }
 
-  const c = document.getElementById('allTasksList');
-  if (!filtered.length) {
-    c.innerHTML = `<div class="at-empty">${atFilter === '全て' ? 'タスクがありません' : `「${atFilter}」のタスクはありません`}</div>`;
-    return;
-  }
+    function delDtask(roomId, idx) {
+      defaultTasks[roomId].splice(idx, 1);
+      saveSettings();
+      renderDtaskRoomSel();
+      renderDtaskList();
+    }
 
-  // Group by roomId
-  const groups = {};
-  for (const item of filtered) {
-    if (!groups[item.roomId]) groups[item.roomId] = { roomName: item.roomName, items: [] };
-    groups[item.roomId].items.push(item);
-  }
+    function applyDtask(roomId, idx) {
+      const text = defaultTasks[roomId][idx];
+      const room = getRoom(roomId);
+      if (!room) return;
+      const already = room.tasks.find(t => t.text === text);
+      if (already) { alert('すでに同じタスクがあります'); return; }
+      room.tasks.push({ id: `t_${Date.now()}${Math.random()}`, text, status: '未着手', date: '' });
+      save();
+      renderFP();
+      renderOverall();
+      // Flash feedback
+      const btn = event.target;
+      btn.textContent = '追加済✓';
+      btn.style.color = 'var(--c5)';
+      setTimeout(() => { btn.textContent = '今すぐ追加'; btn.style.color = ''; }, 1500);
+    }
 
-  c.innerHTML = Object.entries(groups).map(([roomId, g]) => `
+    document.getElementById('settingsBtn').addEventListener('click', openSettings);
+    document.getElementById('settingsCloseBtn').addEventListener('click', closeSettings);
+    document.getElementById('dtaskAddBtn').addEventListener('click', addDtask);
+    document.getElementById('dtaskInp').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addDtask(); }
+    });
+
+    // ============================================================
+    // All Tasks Panel
+    // ============================================================
+    const ST_DOT_COLORS = { '未着手': 'var(--bd)', '着手中': 'var(--c2)', '済': 'var(--c5)' };
+    let atFilter = '全て';
+
+    function openAllTasks() {
+      renderAllTasks();
+      document.getElementById('allTasksPanel').classList.add('open');
+    }
+
+    function closeAllTasks() {
+      document.getElementById('allTasksPanel').classList.remove('open');
+    }
+
+    function renderAllTasks() {
+      const items = [];
+      for (const gr of gridData.rooms) {
+        const room = getRoom(gr.id);
+        if (!room) continue;
+        for (const t of room.tasks) items.push({ task: t, roomId: gr.id, roomName: room.name, subName: null });
+        for (const sub of (room.subplaces || [])) {
+          for (const t of sub.tasks) items.push({ task: t, roomId: gr.id, roomName: room.name, subName: sub.name });
+        }
+      }
+
+      const filtered = atFilter === '全て' ? items : items.filter(i => i.task.status === atFilter);
+
+      const c = document.getElementById('allTasksList');
+      if (!filtered.length) {
+        c.innerHTML = `<div class="at-empty">${atFilter === '全て' ? 'タスクがありません' : `「${atFilter}」のタスクはありません`}</div>`;
+        return;
+      }
+
+      // Group by roomId
+      const groups = {};
+      for (const item of filtered) {
+        if (!groups[item.roomId]) groups[item.roomId] = { roomName: item.roomName, items: [] };
+        groups[item.roomId].items.push(item);
+      }
+
+      c.innerHTML = Object.entries(groups).map(([roomId, g]) => `
     <div class="at-room-group">
       <div class="at-room-hdr">
         <span class="at-room-name">${esc(g.roomName)}</span>
@@ -2470,198 +3195,341 @@ function renderAllTasks() {
         <div class="at-task-item" data-st="${i.task.status}"
           onclick="jumpToTask('${roomId}')">
           <div class="at-st-dot" style="background:${ST_DOT_COLORS[i.task.status]}"></div>
-          <span class="at-task-text ${i.task.status==='済'?'done':''}">${esc(i.task.text)}</span>
+          <span class="at-task-text ${i.task.status === '済' ? 'done' : ''}">${esc(i.task.text)}</span>
           ${i.subName ? `<span class="at-sub-name">${esc(i.subName)}</span>` : ''}
         </div>`).join('')}
     </div>`).join('');
-}
+    }
 
-function jumpToTask(roomId) {
-  closeAllTasks();
-  setTimeout(() => openSheet(roomId), 200);
-}
+    function jumpToTask(roomId) {
+      closeAllTasks();
+      setTimeout(() => openSheet(roomId), 200);
+    }
 
-// Filter tabs
-document.getElementById('atFilter').addEventListener('click', e => {
-  const tab = e.target.closest('.at-tab');
-  if (!tab) return;
-  atFilter = tab.dataset.f;
-  document.querySelectorAll('.at-tab').forEach(t => t.classList.toggle('active', t === tab));
-  renderAllTasks();
-});
+    // Filter tabs
+    document.getElementById('atFilter').addEventListener('click', e => {
+      const tab = e.target.closest('.at-tab');
+      if (!tab) return;
+      atFilter = tab.dataset.f;
+      document.querySelectorAll('.at-tab').forEach(t => t.classList.toggle('active', t === tab));
+      renderAllTasks();
+    });
 
-document.getElementById('allTasksBtn').addEventListener('click', openAllTasks);
-document.getElementById('allTasksCloseBtn').addEventListener('click', closeAllTasks);
+    document.getElementById('allTasksBtn').addEventListener('click', openAllTasks);
+    document.getElementById('allTasksCloseBtn').addEventListener('click', closeAllTasks);
 
-// ============================================================
-// Grid Editor
-// ============================================================
-let gePaintMode = 'paint'; // 'paint' | 'erase'
-let geSelectedRoom = null;
-let gePainting = false;
+    // ============================================================
+    // Grid Editor
+    // ============================================================
+    let gePaintMode = 'paint'; // 'paint' | 'erase'
+    let geSelectedRoom = null;
+    let gePainting = false;
 
-function openGridEditor() {
-  geSelectedRoom = gridData.rooms[0]?.id || null;
-  gePaintMode = 'paint';
-  renderGeRooms();
-  renderGeGrid();
-  document.getElementById('geEraseBtn').classList.remove('active');
-  document.getElementById('gePanel').classList.add('open');
-}
+    function openGridEditor() {
+      geSelectedRoom = gridData.rooms[0]?.id || null;
+      gePaintMode = 'paint';
+      renderGeRooms();
+      renderGeGrid();
+      document.getElementById('geEraseBtn').classList.remove('active');
+      document.getElementById('gePanel').classList.add('open');
+    }
 
-function closeGridEditor() {
-  document.getElementById('gePanel').classList.remove('open');
-  saveGridData();
-  renderFP();
-  renderOverall();
-  renderPickup();
-}
+    function closeGridEditor() {
+      document.getElementById('gePanel').classList.remove('open');
+      saveGridData();
+      renderFP();
+      renderOverall();
+      renderPickup();
+    }
 
-function renderGeRooms() {
-  const c = document.getElementById('geRooms');
-  c.innerHTML = gridData.rooms.map(gr => {
-    const name = getRoom(gr.id)?.name || gr.id;
-    const color = ROOM_COLORS[gr.colorIdx % ROOM_COLORS.length];
-    return `<div class="ge-room-chip ${gr.id === geSelectedRoom ? 'sel' : ''}"
+    function renderGeRooms() {
+      const c = document.getElementById('geRooms');
+      c.innerHTML = gridData.rooms.map(gr => {
+        const name = getRoom(gr.id)?.name || gr.id;
+        const color = ROOM_COLORS[gr.colorIdx % ROOM_COLORS.length];
+        return `<div class="ge-room-chip ${gr.id === geSelectedRoom ? 'sel' : ''}"
       onclick="geSelectRoom('${gr.id}')">
       <div class="ge-room-dot" style="background:${color}"></div>
       ${esc(name)}
     </div>`;
-  }).join('') +
-  `<button class="ge-add-room-btn" id="geAddRoomChip">＋ 部屋を追加</button>`;
+      }).join('') +
+        `<button class="ge-add-room-btn" id="geAddRoomChip">＋ 部屋を追加</button>`;
 
-  document.getElementById('geAddRoomChip').addEventListener('click', () => {
-    document.getElementById('addRoomInp').value = '';
-    document.getElementById('addRoomModal').classList.add('on');
-    setTimeout(() => document.getElementById('addRoomInp').focus(), 100);
-  });
+      document.getElementById('geAddRoomChip').addEventListener('click', () => {
+        document.getElementById('addRoomInp').value = '';
+        document.getElementById('addRoomModal').classList.add('on');
+        setTimeout(() => document.getElementById('addRoomInp').focus(), 100);
+      });
 
-  const delBtn = document.getElementById('geDelRoomBtn');
-  delBtn.disabled = !geSelectedRoom;
-}
-
-function geSelectRoom(id) {
-  geSelectedRoom = id;
-  gePaintMode = 'paint';
-  document.getElementById('geEraseBtn').classList.remove('active');
-  renderGeRooms();
-}
-
-function renderGeGrid() {
-  const grid = document.getElementById('geGrid');
-  grid.innerHTML = '';
-  for (let row = 0; row < GRID_ROWS; row++) {
-    for (let col = 0; col < GRID_COLS; col++) {
-      const cell = document.createElement('div');
-      cell.className = 'ge-cell';
-      cell.dataset.r = row; cell.dataset.c = col;
-      colorGeCell(cell, gridData.cells[row]?.[col]);
-      grid.appendChild(cell);
+      const delBtn = document.getElementById('geDelRoomBtn');
+      delBtn.disabled = !geSelectedRoom;
     }
-  }
 
-  // Pointer events for painting
-  grid.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    gePainting = true;
-    grid.setPointerCapture(e.pointerId);
-    gePaintCell(e);
-  });
-  grid.addEventListener('pointermove', e => { if (gePainting) gePaintCell(e); });
-  grid.addEventListener('pointerup',   () => { gePainting = false; });
-  grid.addEventListener('pointercancel', () => { gePainting = false; });
-}
+    function geSelectRoom(id) {
+      geSelectedRoom = id;
+      gePaintMode = 'paint';
+      document.getElementById('geEraseBtn').classList.remove('active');
+      renderGeRooms();
+    }
 
-function colorGeCell(cellEl, roomId) {
-  if (!roomId) {
-    cellEl.style.background = '#e8e4d8';
-    return;
-  }
-  const gr = getGridRoom(roomId);
-  const base = gr ? ROOM_COLORS[gr.colorIdx % ROOM_COLORS.length] : '#ccc';
-  cellEl.style.background = base;
-}
+    function renderGeGrid() {
+      const grid = document.getElementById('geGrid');
+      grid.innerHTML = '';
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'ge-cell';
+          cell.dataset.r = row; cell.dataset.c = col;
+          colorGeCell(cell, gridData.cells[row]?.[col]);
+          grid.appendChild(cell);
+        }
+      }
 
-function gePaintCell(e) {
-  const grid = document.getElementById('geGrid');
-  const rect = grid.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  const col = Math.floor(x / rect.width  * GRID_COLS);
-  const row = Math.floor(y / rect.height * GRID_ROWS);
-  if (col < 0 || col >= GRID_COLS || row < 0 || row >= GRID_ROWS) return;
+      // Pointer events for painting
+      grid.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        gePainting = true;
+        grid.setPointerCapture(e.pointerId);
+        gePaintCell(e);
+      });
+      grid.addEventListener('pointermove', e => { if (gePainting) gePaintCell(e); });
+      grid.addEventListener('pointerup', () => { gePainting = false; });
+      grid.addEventListener('pointercancel', () => { gePainting = false; });
+    }
 
-  const newId = gePaintMode === 'erase' ? null : geSelectedRoom;
-  if (gridData.cells[row][col] === newId) return;
-  gridData.cells[row][col] = newId;
+    function colorGeCell(cellEl, roomId) {
+      if (!roomId) {
+        cellEl.style.background = '#e8e4d8';
+        return;
+      }
+      const gr = getGridRoom(roomId);
+      const base = gr ? ROOM_COLORS[gr.colorIdx % ROOM_COLORS.length] : '#ccc';
+      cellEl.style.background = base;
+    }
 
-  // Update cell visual
-  const idx = row * GRID_COLS + col;
-  const cellEl = grid.children[idx];
-  if (cellEl) colorGeCell(cellEl, newId);
-}
+    function gePaintCell(e) {
+      const grid = document.getElementById('geGrid');
+      const rect = grid.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const col = Math.floor(x / rect.width * GRID_COLS);
+      const row = Math.floor(y / rect.height * GRID_ROWS);
+      if (col < 0 || col >= GRID_COLS || row < 0 || row >= GRID_ROWS) return;
 
-// Add room
-function doAddRoom() {
-  const name = document.getElementById('addRoomInp').value.trim();
-  if (!name) { document.getElementById('addRoomModal').classList.remove('on'); return; }
-  const id = `room_${Date.now()}`;
-  const colorIdx = nextColorIdx();
-  gridData.rooms.push({ id, weight: 0, colorIdx });
-  rooms.push({ id, name, notes:'', tasks:[], subplaces:[], checks:{floor:false,trash:false} });
-  if (!defaultTasks[id]) defaultTasks[id] = [];
-  calcWeightsFromGrid(gridData.cells, gridData.rooms);
-  geSelectedRoom = id;
-  saveGridData();
-  save();
-  document.getElementById('addRoomModal').classList.remove('on');
-  renderGeRooms();
-}
+      const newId = gePaintMode === 'erase' ? null : geSelectedRoom;
+      if (gridData.cells[row][col] === newId) return;
+      gridData.cells[row][col] = newId;
 
-// Delete room
-function geDeleteRoom() {
-  if (!geSelectedRoom) return;
-  const room = getRoom(geSelectedRoom);
-  const name = room?.name || geSelectedRoom;
-  if (!confirm(`「${name}」を削除しますか？\nセルと全データが消えます。`)) return;
-  // Clear cells
-  for (let r=0; r<GRID_ROWS; r++)
-    for (let c=0; c<GRID_COLS; c++)
-      if (gridData.cells[r][c] === geSelectedRoom) gridData.cells[r][c] = null;
-  gridData.rooms = gridData.rooms.filter(gr => gr.id !== geSelectedRoom);
-  rooms = rooms.filter(r => r.id !== geSelectedRoom);
-  geSelectedRoom = gridData.rooms[0]?.id || null;
-  calcWeightsFromGrid(gridData.cells, gridData.rooms);
-  saveGridData(); save();
-  renderGeRooms();
-  renderGeGrid();
-}
+      // Update cell visual
+      const idx = row * GRID_COLS + col;
+      const cellEl = grid.children[idx];
+      if (cellEl) colorGeCell(cellEl, newId);
+    }
 
-document.getElementById('layoutBtn').addEventListener('click', openGridEditor);
-document.getElementById('geCloseBtn').addEventListener('click', closeGridEditor);
-document.getElementById('geEraseBtn').addEventListener('click', () => {
-  gePaintMode = gePaintMode === 'erase' ? 'paint' : 'erase';
-  document.getElementById('geEraseBtn').classList.toggle('active', gePaintMode === 'erase');
-});
-document.getElementById('geDelRoomBtn').addEventListener('click', geDeleteRoom);
-document.getElementById('addRoomCancelBtn').addEventListener('click', () => {
-  document.getElementById('addRoomModal').classList.remove('on');
-});
-document.getElementById('addRoomOkBtn').addEventListener('click', doAddRoom);
-document.getElementById('addRoomInp').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doAddRoom();
-  if (e.key === 'Escape') document.getElementById('addRoomModal').classList.remove('on');
-});
+    // Add room
+    function doAddRoom() {
+      const name = document.getElementById('addRoomInp').value.trim();
+      if (!name) { document.getElementById('addRoomModal').classList.remove('on'); return; }
+      const id = `room_${Date.now()}`;
+      const colorIdx = nextColorIdx();
+      gridData.rooms.push({ id, weight: 0, colorIdx });
+      rooms.push({ id, name, notes: '', tasks: [], subplaces: [], checks: { floor: false, trash: false } });
+      if (!defaultTasks[id]) defaultTasks[id] = [];
+      calcWeightsFromGrid(gridData.cells, gridData.rooms);
+      geSelectedRoom = id;
+      saveGridData();
+      save();
+      document.getElementById('addRoomModal').classList.remove('on');
+      renderGeRooms();
+    }
 
-// ============================================================
-// Init
-// ============================================================
-loadGridData();
-loadSettings();
-loadData();
-renderFP();
-renderOverall();
-renderPickup();
-</script>
+    // Delete room
+    function geDeleteRoom() {
+      if (!geSelectedRoom) return;
+      const room = getRoom(geSelectedRoom);
+      const name = room?.name || geSelectedRoom;
+      if (!confirm(`「${name}」を削除しますか？\nセルと全データが消えます。`)) return;
+      // Clear cells
+      for (let r = 0; r < GRID_ROWS; r++)
+        for (let c = 0; c < GRID_COLS; c++)
+          if (gridData.cells[r][c] === geSelectedRoom) gridData.cells[r][c] = null;
+      gridData.rooms = gridData.rooms.filter(gr => gr.id !== geSelectedRoom);
+      rooms = rooms.filter(r => r.id !== geSelectedRoom);
+      geSelectedRoom = gridData.rooms[0]?.id || null;
+      calcWeightsFromGrid(gridData.cells, gridData.rooms);
+      saveGridData(); save();
+      renderGeRooms();
+      renderGeGrid();
+    }
+
+    document.getElementById('layoutBtn').addEventListener('click', openGridEditor);
+    document.getElementById('geCloseBtn').addEventListener('click', closeGridEditor);
+    document.getElementById('geEraseBtn').addEventListener('click', () => {
+      gePaintMode = gePaintMode === 'erase' ? 'paint' : 'erase';
+      document.getElementById('geEraseBtn').classList.toggle('active', gePaintMode === 'erase');
+    });
+    document.getElementById('geDelRoomBtn').addEventListener('click', geDeleteRoom);
+    document.getElementById('addRoomCancelBtn').addEventListener('click', () => {
+      document.getElementById('addRoomModal').classList.remove('on');
+    });
+    document.getElementById('addRoomOkBtn').addEventListener('click', doAddRoom);
+    document.getElementById('addRoomInp').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doAddRoom();
+      if (e.key === 'Escape') document.getElementById('addRoomModal').classList.remove('on');
+    });
+
+    // ============================================================
+    // Supabase Config  ← ここを自分のプロジェクトの値に書き換える
+    // ============================================================
+    const SUPABASE_URL = 'https://kfuzudzjcjmbncwwptfl.supabase.co';       // 例: https://xxxx.supabase.co
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdXp1ZHpqY2ptYm5jd3dwdGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNDA1NjAsImV4cCI6MjA5MzkxNjU2MH0.XEwPeD8Li6LpNwUX2jrOstYJs78Apq6hzHnC7d8TzB4';  // 例: eyJhbGci...
+
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let sbUser = null;
+    let syncTimer = null;
+
+    // ============================================================
+    // Auth
+    // ============================================================
+    let authMode = 'login';
+
+    function showAuthScreen() { document.getElementById('authScreen').classList.remove('hidden'); }
+    function hideAuthScreen() { document.getElementById('authScreen').classList.add('hidden'); }
+
+    document.getElementById('authTabLogin').addEventListener('click', () => {
+      authMode = 'login';
+      document.getElementById('authTabLogin').classList.add('active');
+      document.getElementById('authTabSignup').classList.remove('active');
+      document.getElementById('authSubmitBtn').textContent = 'ログイン';
+    });
+
+    document.getElementById('authTabSignup').addEventListener('click', () => {
+      authMode = 'signup';
+      document.getElementById('authTabSignup').classList.add('active');
+      document.getElementById('authTabLogin').classList.remove('active');
+      document.getElementById('authSubmitBtn').textContent = '新規登録';
+    });
+
+    document.getElementById('authSubmitBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const errEl = document.getElementById('authErr');
+      errEl.textContent = '';
+
+      if (!email || !password) { errEl.textContent = 'メールアドレスとパスワードを入力してください'; return; }
+
+      const btn = document.getElementById('authSubmitBtn');
+      btn.textContent = '処理中...'; btn.disabled = true;
+
+      const { data, error } = authMode === 'signup'
+        ? await sb.auth.signUp({ email, password })
+        : await sb.auth.signInWithPassword({ email, password });
+
+      btn.disabled = false;
+      btn.textContent = authMode === 'signup' ? '新規登録' : 'ログイン';
+
+      if (error) { errEl.textContent = error.message; return; }
+      if (authMode === 'signup' && data.user && !data.session) {
+        errEl.style.color = 'var(--c5)';
+        errEl.textContent = '確認メールを送りました。メールのリンクをクリックしてください。';
+        return;
+      }
+      sbUser = data.user;
+      await onLogin();
+    });
+
+    async function onLogin() {
+      hideAuthScreen();
+      await loadFromCloud();
+      renderFP();
+      renderOverall();
+      renderPickup();
+    }
+
+    // ============================================================
+    // Cloud Sync
+    // ============================================================
+    function showSync(msg) {
+      const el = document.getElementById('syncIndicator');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    async function saveToCloud() {
+      if (!sbUser) return;
+      showSync('保存中...');
+      const { error } = await sb.from('oheya_data').upsert({
+        user_id: sbUser.id,
+        grid_data: gridData,
+        rooms_data: rooms,
+        dtasks: defaultTasks,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+      showSync(error ? '保存失敗' : '保存済み ✓');
+    }
+
+    async function loadFromCloud() {
+      if (!sbUser) return;
+      const { data, error } = await sb.from('oheya_data')
+        .select('*').eq('user_id', sbUser.id).single();
+      if (error || !data) {
+        // 初回：ローカルデータをそのままクラウドに保存
+        await saveToCloud();
+        return;
+      }
+      if (data.grid_data) { gridData = data.grid_data; }
+      if (data.rooms_data) { rooms = data.rooms_data.map(migrateRoom); }
+      if (data.dtasks) { defaultTasks = data.dtasks; }
+      // gridDataのroomsにないroomsを補完
+      for (const gr of gridData.rooms) {
+        if (!rooms.find(r => r.id === gr.id)) {
+          rooms.push({
+            id: gr.id, name: DEFAULT_NAMES[gr.id] || gr.id,
+            notes: '', tasks: [], subplaces: [], checks: { floor: false, trash: false }
+          });
+        }
+      }
+    }
+
+    // クラウド保存をsave()に自動連携（デバウンス3秒）
+    let cloudSaveTimer = null;
+    const origSave = save;
+    save = function () {
+      origSave();
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(saveToCloud, 3000);
+    };
+
+    const origSaveGridData = saveGridData;
+    saveGridData = function () {
+      origSaveGridData();
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(saveToCloud, 3000);
+    };
+
+    // ============================================================
+    // Init
+    // ============================================================
+    loadGridData();
+    loadSettings();
+    loadData();
+
+    // Check existing session
+    (async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        sbUser = session.user;
+        await onLogin();
+      } else {
+        showAuthScreen();
+        renderFP();
+        renderOverall();
+        renderPickup();
+      }
+    })();
+  </script>
 </body>
+
 </html>
